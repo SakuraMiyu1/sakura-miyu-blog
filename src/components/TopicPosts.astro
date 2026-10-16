@@ -2,7 +2,7 @@
 import PostCard from './PostCard.astro';
 import Icon from './Icon.astro';
 import type { Post } from '../lib/blog';
-interface Props { entries: Post[]; }
-const { entries } = Astro.props;
+interface Props { entries: Post[]; headingLevel?: 'h2' | 'h3'; }
+const { entries, headingLevel = 'h2' } = Astro.props;
 ---
-{entries.length ? entries.map(post => <PostCard post={post} />) : <section class="empty-state panel"><Icon name="flower" size={35} /><h2>A little space for future stories.</h2><p>These pages are still waiting to bloom. In the meantime, you're welcome to wander through the diary.</p><a href="/blog/" class="button button-dark">Explore the diary <Icon name="arrow" size={15} /></a></section>}
+{entries.length ? entries.map(post => <PostCard post={post} headingLevel={headingLevel} />) : <section class="empty-state panel"><Icon name="flower" size={35} /><h2>This corner of my world is still growing. 🎀</h2><p>No little stories here yet~ 🌸 New adventures are coming soon. In the meantime, you're welcome to wander through the diary.</p><a href="/blog/" class="button button-dark">Explore the diary <Icon name="arrow" size={15} /></a></section>}

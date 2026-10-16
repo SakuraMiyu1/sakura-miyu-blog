@@ -1,7 +1,7 @@
 ---
 import PageLayout from '../../layouts/PageLayout.astro';
-import { allTags, posts, tagUrl } from '../../lib/blog';
+import { allTags, posts, tagUrl, hasTag } from '../../lib/blog';
 const tags = await allTags();
 const entries = await posts();
 ---
-<PageLayout title="Threads of little interests" description="Pick a tag and see where your curiosity takes you." eyebrow="THE TAG COLLECTION"><section class="panel tag-directory">{tags.map(tag => <a href={tagUrl(tag)}><span>{tag}</span><span>{entries.filter(post => post.data.tags.includes(tag)).length} entries <span aria-hidden="true">↗</span></span></a>)}</section></PageLayout>
+<PageLayout title="Threads of little interests" description="Pick a tag and see where your curiosity takes you." eyebrow="THE TAG COLLECTION"><section class="panel tag-directory">{tags.map(tag => <a href={tagUrl(tag)}><span>{tag}</span><span>{entries.filter(post => hasTag(post, tag)).length} entries <span aria-hidden="true">↗</span></span></a>)}</section></PageLayout>

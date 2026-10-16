@@ -1,0 +1,30 @@
+---
+interface Props { url: string; label: string; message?: string; }
+const { url, label, message = 'Link copied. Thank you for sharing ♡' } = Astro.props;
+---
+<span class="copy-control" data-copy-url={url} data-copy-message={message}>
+  <button type="button" class="copy-button">{label}</button>
+  <span class="copy-status" role="status" aria-live="polite" aria-atomic="true"></span>
+  <input class="copy-fallback" aria-label={`${label}: select this address to copy`} readonly hidden />
+</span>
+<script>
+  document.querySelectorAll<HTMLElement>('[data-copy-url]').forEach(control => {
+    const button = control.querySelector<HTMLButtonElement>('button')!;
+    const status = control.querySelector<HTMLElement>('.copy-status')!;
+    const fallback = control.querySelector<HTMLInputElement>('.copy-fallback')!;
+    button.addEventListener('click', async () => {
+      const url = control.dataset.copyUrl!;
+      try {
+        await navigator.clipboard.writeText(url);
+        fallback.hidden = true;
+        status.textContent = control.dataset.copyMessage!;
+      } catch {
+        fallback.value = url;
+        fallback.hidden = false;
+        fallback.focus();
+        fallback.select();
+        status.textContent = 'Copy the selected address with Ctrl+C, Cmd+C, or your device’s copy menu.';
+      }
+    });
+  });
+</script>

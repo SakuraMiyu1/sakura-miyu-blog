@@ -11,7 +11,6 @@ const links = [['Home', '/'], ['Diary', '/diary/'], ['Cosplay', '/cosplay/'], ['
 </header>
 <nav class="navigation" id="main-nav" aria-label="Main navigation"><div class="shell nav-inner">{links.map(([label, href]) => <a href={href} aria-current={pathname === href || (href !== '/' && pathname.startsWith(href)) ? 'page' : undefined}>{label === 'Home' && <Icon name="heart" size={14} />}{label}</a>)}<a class="nav-search" href="/blog/" aria-label="Search all posts"><Icon name="search" size={18} /><span class="mobile-only">Search the blog</span></a></div></nav>
 <script>
-  document.documentElement.classList.add('js-enabled');
   const toggle = document.querySelector<HTMLButtonElement>('.menu-toggle');
   const nav = document.querySelector<HTMLElement>('#main-nav');
   const close = () => { toggle?.setAttribute('aria-expanded', 'false'); toggle?.setAttribute('aria-label', 'Open navigation'); nav?.classList.remove('is-open'); };
@@ -21,6 +20,8 @@ const links = [['Home', '/'], ['Diary', '/diary/'], ['Cosplay', '/cosplay/'], ['
     toggle.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
     nav?.classList.toggle('is-open', open);
   });
-  document.addEventListener('keydown', event => { if (event.key === 'Escape') { close(); toggle?.focus(); } });
+  document.addEventListener('keydown', event => { if (event.key === 'Escape' && toggle?.getAttribute('aria-expanded') === 'true') { close(); toggle.focus(); } });
+  document.addEventListener('click', event => { if (event.target instanceof Node && !nav?.contains(event.target) && !toggle?.contains(event.target)) close(); });
+  matchMedia('(min-width: 601px)').addEventListener('change', close);
   nav?.querySelectorAll('a').forEach(link => link.addEventListener('click', close));
 </script>

@@ -1,6 +1,7 @@
 import { defineCollection } from 'astro:content';
 import { z } from 'astro/zod';
 import { glob } from 'astro/loaders';
+import { categories } from './lib/post-utils';
 
 const blog = defineCollection({
   loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/blog' }),
@@ -9,8 +10,8 @@ const blog = defineCollection({
     description: z.string(),
     pubDate: z.coerce.date(),
     updatedDate: z.preprocess(value => value === null || value === '' ? undefined : value, z.coerce.date().optional()),
-    tags: z.array(z.string().min(1)).default([]),
-    category: z.enum(['Diary', 'Anime', 'Cosplay', 'Gaming', 'Writing', 'Gothic Kawaii', 'University', 'Creative Writing', 'Fanfiction']).default('Diary'),
+    tags: z.array(z.string().trim().min(1).regex(/[\p{L}\p{N}]/u, 'A tag must contain a letter or number.')).default([]),
+    category: z.enum(categories).default('Diary'),
     language: z.enum(['multilingual', 'uk', 'en', 'ja']).default('en'),
     featured: z.boolean().default(false),
     draft: z.boolean().default(false),

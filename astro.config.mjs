@@ -4,10 +4,13 @@ import sitemap from '@astrojs/sitemap';
 import { loadEnv } from 'vite';
 
 const env = loadEnv(process.env.NODE_ENV || 'production', process.cwd(), '');
-const site = process.env.SITE_URL || env.SITE_URL || process.env.CF_PAGES_URL || 'https://sakura-miyu-blog.pages.dev';
+const site = process.env.SITE_URL || env.SITE_URL || 'https://sakura-miyu-blog.pages.dev';
 const url = new URL(site);
 if (!['http:', 'https:'].includes(url.protocol) || url.pathname !== '/' || url.search || url.hash) {
   throw new Error('SITE_URL must be an absolute HTTP(S) origin, without a path, query or fragment.');
+}
+if (url.hostname.endsWith('.pages.dev') && url.hostname.split('.').length > 3) {
+  throw new Error('SITE_URL must be the permanent production origin, not a Cloudflare preview deployment.');
 }
 
 export default defineConfig({

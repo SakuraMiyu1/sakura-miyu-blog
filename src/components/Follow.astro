@@ -1,4 +1,13 @@
 ---
 import Icon from './Icon.astro';
+import CopyLink from './CopyLink.astro';
+const blogUrl = new URL('/', Astro.site).href;
 ---
-<section class="follow panel" aria-labelledby="follow-title"><span class="follow-icon"><Icon name="heart" size={26} /></span><div><span class="eyebrow">LET'S KEEP A LITTLE CONNECTION</span><h2 id="follow-title">Follow Sakura Miyu</h2><p>Add this little world to your bookmarks, or let new entries find you through RSS.</p></div><a class="button button-dark" href="/rss.xml"><Icon name="rss" size={16} /> Follow via RSS</a></section>
+<section class="panel sidebar-section follow-sidebar" aria-labelledby="follow-title">
+  <h2 id="follow-title">Follow Sakura Miyu <span aria-hidden="true">🎀</span></h2>
+  <p>Keep a little connection. Save this world to your bookmarks or follow new entries through RSS.</p>
+  <div class="follow-actions">
+    <a class="button button-dark" href="/rss.xml"><Icon name="rss" size={16} /> RSS Feed</a>
+    <CopyLink url={blogUrl} label="Copy Blog Link" message="Blog link copied. Keep a little magic close ♡" />
+  </div>
+</section>

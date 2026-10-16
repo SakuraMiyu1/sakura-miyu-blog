@@ -76,7 +76,7 @@ Write your content below the frontmatter. `image` and `imageAlt` are optional: o
 
 Set `draft: true` to exclude a post from the public site, RSS, search, related posts, and archives. Future-dated posts are also excluded until a build runs after their publication date; there is no automatic scheduled publishing on a static host. The featured entry is the newest published post with `featured: true`, with the newest entry as a fallback. Mark posts as drafts before committing if they are not ready for public GitHub.
 
-Categories: `Diary`, `Anime`, `Cosplay`, `Gaming`, `Writing`, `Gothic Kawaii`, `University`, `Creative Writing`, `Fanfiction`. Tags are free text. Each tag gets a static page automatically. The main interest tags have pages even while empty. Category pages match the category field; the Diary/Anime/Cosplay/Gaming navigation sections include both that category and posts tagged with the interest. Writing collects writing, creative writing, and fanfiction entries.
+Categories: `Diary`, `Anime`, `Cosplay`, `Gaming`, `Writing`, `Gothic Kawaii`, `University`, `Creative Writing`, `Fanfiction`. Tags are free text and must contain at least one letter or number. Each tag gets a static page automatically. Case and Unicode width variants share one tag URL. The main interest tags have pages even while empty. Category pages and the Diary/Anime/Cosplay/Gaming sections include both that category and posts tagged with the interest. Writing collects writing, creative writing, and fanfiction entries. The archive groups published entries by UTC year and month, newest first.
 
 Supported language values: `multilingual`, `uk`, `en`, `ja`. Posts are manually written and are never automatically translated. For the optional language navigation, use these exact heading IDs inside language sections:
 
@@ -141,7 +141,7 @@ Push the new file to GitHub and Cloudflare Pages rebuilds the site, including th
    | `SITE_URL` | Your full production origin, e.g. `https://sakura-miyu-blog.pages.dev` |
 
 5. Save and deploy. Cloudflare installs dependencies and builds every route. No Cloudflare adapter, database, secret key, or server runtime is needed for this static site.
-6. If Cloudflare assigned a different project URL, set production `SITE_URL` to that exact HTTPS origin and trigger a new deployment. This sets canonical URLs, RSS links, sitemap links, structured data and social images. When `SITE_URL` is absent, configuration uses Cloudflare's `CF_PAGES_URL` if available, then `https://sakura-miyu-blog.pages.dev` as a local build fallback. This fallback is a proposed address, not a registered deployment. Always set `SITE_URL` before the public launch. Set the same production `SITE_URL` for preview builds if you want them to canonicalize to production.
+6. If Cloudflare assigned a different project URL, set `SITE_URL` to that exact production HTTPS origin and trigger a new deployment. This sets canonical URLs, RSS links, sitemap links, structured data and social images. When `SITE_URL` is absent, configuration uses the existing production address `https://sakura-miyu-blog.pages.dev`. It deliberately ignores `CF_PAGES_URL`, which can be a temporary preview URL. Set the same production `SITE_URL` in both Production and Preview environments. Hashed/branch preview `pages.dev` origins are rejected as permanent site URLs.
 7. Open the deployed homepage, one post, `/rss.xml`, `/sitemap.xml`, and `/robots.txt`. Pushes to `main` now deploy automatically.
 8. Optional custom domain: open the Pages project's **Custom domains**, add your domain, and follow Cloudflare's DNS setup. Once active, set `SITE_URL` to `https://your-domain.example` (without a path), redeploy, and select one primary host. Use Cloudflare redirect rules to redirect secondary domains to the primary host.
 
@@ -159,22 +159,27 @@ For local canonical checks, copy `.env.example` to `.env` and replace `SITE_URL`
 
 ## Search, sharing and following
 
-Search is a small client-side script that fetches the static `/search-index.json` only on the blog listing. It searches post titles, descriptions, tags and full text, with category/tag filters, a clear button and six-at-a-time loading. Results work across Ukrainian, English and Japanese; no stemming or translation is performed. All entries remain readable without JavaScript, and category/tag/archive links work without JavaScript.
+Search is a small client-side script that fetches the static `/search-index.json` only on the blog listing. It searches post titles, descriptions, tags, categories and full text using case-insensitive Unicode normalization, with category/tag filters, a clear button and six-at-a-time loading. Loading more moves keyboard focus to the first new entry. Results work across Ukrainian, English and Japanese; no stemming or translation is performed. All entries remain readable without JavaScript, and category/tag/archive links work without JavaScript.
 
-The post share controls copy the current post URL or open X, Facebook or Pinterest's sharing page. Copying requires a secure browser context; a selectable link is shown if clipboard access is unavailable. Social platforms require a publicly reachable site to fetch previews. The Follow section links to RSS and suggests bookmarking. There is no email form. A future newsletter can be linked in `src/components/Follow.astro` after choosing a provider.
+The post share controls copy the canonical post URL or open X, Facebook or Pinterest's sharing page. Copying requires a secure browser context; a labelled, focused and selected address field is shown if clipboard access is unavailable or denied. Social platforms require a publicly reachable site to fetch previews. The sidebar Follow section offers RSS, Copy Blog Link and a bookmarking suggestion. The RSS feed includes item-level Dublin Core language codes for multilingual entries. There is no email form. A future newsletter can be linked in `src/components/Follow.astro` after choosing a provider.
 
-Previous/Next and Related Posts appear automatically when other published entries exist. The first release intentionally includes one authentic introductory post, so there are no fabricated diary entries or inactive previous/next links.
+Previous/Next follow publication chronology. Up to three related entries are ranked by shared tags, then category, with date as a tie-breaker. The current entry and duplicate recommendations are excluded; unavailable neighbours and empty related sections are hidden. The site includes one authentic introductory post, so there are no fabricated diary entries or inactive previous/next links.
 
 ## Verification
 
-`npm run build` runs the production checks. For browser verification, start `npm run preview -- --host 127.0.0.1` in one terminal, then:
+`npm test` checks publication boundaries, Unicode tags, recommendation ranking and archive grouping. `npm run build` runs production checks, including unique titles, social metadata, JSON-LD, canonical origins and internal links.
+
+For the multi-post integration checks, stop any running Astro dev/preview server first, then run `npm run test:content`. It temporarily creates uniquely named QA posts, builds to the gitignored `.qa-dist`, checks pagination, full-text search, related posts, archive years/months and draft/future exclusions in a browser, then removes only its own test posts in a `finally` block. Do not interrupt this test or run another build concurrently. If it is forcibly interrupted, remove only `src/content/blog/qa-fixture-*.md` before your next build; the production checker refuses to publish those files.
+
+For browser verification, start `npm run preview -- --host 127.0.0.1` in one terminal, then:
 
 ```powershell
 npx playwright install chromium
 npm run test:browser
+npm run test:a11y
 ```
 
-The browser script checks 1920px, 1366px, tablet and mobile layouts, image loading, horizontal overflow, navigation, search content, filters, clear states, language anchors and sharing. Optional development-only tooling is never shipped to the browser. Screenshots go to `test-results/` (gitignored).
+The browser script checks 320, 375, 390, 430, 768, 1024, 1366 and 1920px layouts, image loading, horizontal overflow, keyboard/outside-click navigation, search, filters, language anchors, clipboard fallback, feed XML, custom 404 and no-JavaScript reading. The accessibility script checks computed text contrast, heading order, labels, landmarks, alt attributes and duplicate IDs on nine representative pages. These checks do not replace manual screen-reader testing or Lighthouse measurement. Optional development-only tooling is never shipped to the browser. Screenshots and the accessibility report go to `test-results/` (gitignored).
 
 To test with an already installed Edge instead of downloading Chromium, set `$env:TEST_BROWSER_CHANNEL = 'msedge'` in PowerShell before `npm run test:browser`.
 
