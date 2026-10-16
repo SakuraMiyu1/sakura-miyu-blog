@@ -2,6 +2,8 @@
 
 A personal Pink + Black Gothic Kawaii blog for **Sakura Miyu / さくらみゆ**. Built with Astro, TypeScript, plain CSS, and local Markdown/MDX content. All pages are generated as static files. No database, accounts, analytics, paid services, or runtime API is required.
 
+Live website: [sakura-miyu-blog.pages.dev](https://sakura-miyu-blog.pages.dev/).
+
 ## Start locally
 
 Use Node.js **22.22.0 or newer**. Node 20 is not supported by the current Astro release. The project pins the minimum in `.node-version`. On this Windows machine, a suitable Node is already available in `C:\Program Files\nodejs`; if `node --version` shows 20, select it for the current PowerShell session with `$env:Path = "C:\Program Files\nodejs;" + $env:Path` before running npm. This does not change the system installation.
@@ -176,4 +178,4 @@ The browser script checks 1920px, 1366px, tablet and mobile layouts, image loadi
 
 To test with an already installed Edge instead of downloading Chromium, set `$env:TEST_BROWSER_CHANNEL = 'msedge'` in PowerShell before `npm run test:browser`.
 
-Original supplied assets are preserved. The source repository is [SakuraMiyu1/sakura-miyu-blog](https://github.com/SakuraMiyu1/sakura-miyu-blog). Use the Cloudflare Pages setup above to connect this repository and select your production domain.
+Original supplied assets are preserved. The source repository is [SakuraMiyu1/sakura-miyu-blog](https://github.com/SakuraMiyu1/sakura-miyu-blog). Cloudflare Pages is connected to `main` and automatically publishes new commits. The production origin is `https://sakura-miyu-blog.pages.dev`; when adding a custom domain, update `SITE_URL` for production and previews, then redeploy.
