@@ -1,0 +1,13 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/Hero.astro';
+import Sidebar from '../components/Sidebar.astro';
+import PostCard from '../components/PostCard.astro';
+import Follow from '../components/Follow.astro';
+import Icon from '../components/Icon.astro';
+import { posts, categories, categoryUrl } from '../lib/blog';
+const entries = await posts();
+const featured = entries.find(post => post.data.featured) || entries[0];
+const topicIcons = ['book', 'moon', 'bow', 'game', 'pen', 'heart', 'book', 'pen', 'sparkle'];
+---
+<BaseLayout><main id="main"><Hero /><div class="shell home-main"><div class="welcome-strip"><span aria-hidden="true">✿</span><p>A little life. A little magic. <em>A place to be myself.</em></p><span lang="ja">ようこそ ♡</span></div><div class="content-grid"><div class="main-column"><section class="welcome panel"><span class="eyebrow">HELLO, LOVELY SOUL <span aria-hidden="true">♡</span></span><h2>Come in, make yourself at home.</h2><p>I'm Sakura Miyu. An anime lover, a daydreamer, and a girl collecting beautiful little moments. Here, everyday life meets imagined worlds — with a little pink, a little black, and a lot of heart.</p><a href="/about/" class="text-link">Meet the girl behind the words <Icon name="arrow" size={15} /></a><span class="welcome-flower" aria-hidden="true">✿</span></section><section class="home-posts" aria-labelledby="recent-heading"><div class="section-heading"><div><span class="eyebrow">THE DIARY IS OPEN</span><h2 id="recent-heading">Recent posts <Icon name="pen" size={22} /></h2></div><a href="/blog/" class="text-link">All entries <Icon name="arrow" size={15} /></a></div>{featured && <PostCard post={featured} featured />}{entries.filter(post => post.id !== featured?.id).slice(0, 3).map(post => <PostCard post={post} />)}</section><section class="topics-section" aria-labelledby="topics-heading"><div class="section-heading"><div><span class="eyebrow">FOLLOW YOUR CURIOSITY</span><h2 id="topics-heading">Little pieces of my world</h2></div></div><div class="category-grid">{categories.map((category, index) => <a href={categoryUrl(category)} class="category-tile"><Icon name={topicIcons[index]} size={25} /><span>{category}</span><span aria-hidden="true">↗</span></a>)}</div></section><section class="diary-note"><Icon name="moon" size={28} /><blockquote>Not every little thought needs to change the world.<br />Some just need a place to bloom.</blockquote><span>FROM MY LITTLE NOTEBOOK <span aria-hidden="true">♡</span></span></section></div><Sidebar /></div><Follow /></div></main></BaseLayout>

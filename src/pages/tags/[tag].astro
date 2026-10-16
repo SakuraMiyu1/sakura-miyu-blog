@@ -1,0 +1,9 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import TopicPosts from '../../components/TopicPosts.astro';
+import { posts, allTags, slugify } from '../../lib/blog';
+export async function getStaticPaths() { return (await allTags()).map(tag => ({ params: { tag: slugify(tag) }, props: { tag } })); }
+const { tag } = Astro.props;
+const entries = (await posts()).filter(post => post.data.tags.includes(tag));
+---
+<PageLayout title={`A little ${tag}`} description={`Follow the ${tag} thread through my little world.`} eyebrow="TAGGED WITH A LITTLE LOVE"><TopicPosts entries={entries} /></PageLayout>

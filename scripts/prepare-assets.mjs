@@ -1,0 +1,20 @@
+import sharp from 'sharp';
+import { mkdir, writeFile } from 'node:fs/promises';
+
+await mkdir('public/images', { recursive: true });
+const header = 'headers/Sakura_Miyu_Header_1600x400.jpg';
+await sharp(header).extract({ left: 0, top: 0, width: 940, height: 400 }).resize(960, 560, { fit: 'cover', position: 'left' }).webp({ quality: 85 }).toFile('public/images/hero.webp');
+await sharp(header).extract({ left: 0, top: 0, width: 980, height: 400 }).resize(1000, 450, { fit: 'cover', position: 'left' }).webp({ quality: 85 }).toFile('public/images/welcome.webp');
+await sharp('avatars/Sakura_Miyu_Avatar_1024x1024.jpg').resize(320, 320).webp({ quality: 85 }).toFile('public/images/avatar.webp');
+await sharp('backgrounds/Sakura_Miyu_Background_1920x1080.jpg').resize({ width: 1440 }).webp({ quality: 70 }).toFile('public/images/background.webp');
+const social = Buffer.from(`<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg"><rect width="1200" height="630" fill="#17121c"/><rect x="25" y="25" width="1150" height="580" rx="20" fill="none" stroke="#e8a0bf"/><text x="600" y="150" fill="#f5b6d0" font-size="32" text-anchor="middle">✧ SAKURA MIYU ✧</text><text x="600" y="285" fill="#fff0f5" font-family="Georgia,serif" font-size="76" text-anchor="middle">Sakura Miyu's</text><text x="600" y="385" fill="#f5b6d0" font-family="Georgia,serif" font-style="italic" font-size="92" text-anchor="middle">Little World</text><text x="600" y="490" fill="#f5b6d0" font-family="Arial,sans-serif" font-size="25" text-anchor="middle">A Little World Between Reality &amp; Dreams</text></svg>`);
+await sharp(social).jpeg({ quality: 90 }).toFile('public/images/social.jpg');
+const favicon = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><rect width="128" height="128" rx="28" fill="#17121c"/><g fill="#f5b6d0" stroke="#e8a0bf" stroke-width="2"><ellipse cx="64" cy="36" rx="18" ry="25"/><ellipse cx="64" cy="36" rx="18" ry="25" transform="rotate(72 64 63)"/><ellipse cx="64" cy="36" rx="18" ry="25" transform="rotate(144 64 63)"/><ellipse cx="64" cy="36" rx="18" ry="25" transform="rotate(216 64 63)"/><ellipse cx="64" cy="36" rx="18" ry="25" transform="rotate(288 64 63)"/></g><circle cx="64" cy="62" r="10" fill="#c2185b"/><path d="M62 87C23 60 29 114 62 96M66 87C105 60 99 114 66 96" fill="#17121c" stroke="#c2185b" stroke-width="2"/><rect x="58" y="85" width="12" height="14" rx="4" fill="#17121c" stroke="#c2185b" stroke-width="2"/></svg>`);
+await sharp(favicon).resize(64).png().toFile('public/favicon.png');
+await sharp(favicon).resize(180).png().toFile('public/apple-touch-icon.png');
+const png = await sharp(favicon).resize(32).png().toBuffer();
+const ico = Buffer.alloc(22);
+ico.writeUInt16LE(1, 2); ico.writeUInt16LE(1, 4); ico[6] = 32; ico[7] = 32;
+ico.writeUInt16LE(1, 10); ico.writeUInt16LE(32, 12); ico.writeUInt32LE(png.length, 14); ico.writeUInt32LE(22, 18);
+await writeFile('public/favicon.ico', Buffer.concat([ico, png]));
+console.log('Optimized local images, social image, and sakura-and-bow favicons ready.');

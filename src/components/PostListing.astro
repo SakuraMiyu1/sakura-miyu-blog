@@ -1,0 +1,71 @@
+---
+import PostCard from './PostCard.astro';
+import Icon from './Icon.astro';
+import { posts, categories, allTags } from '../lib/blog';
+const entries = await posts();
+const tags = await allTags();
+---
+<section data-post-listing aria-label="Find blog entries">
+  <form class="search-panel panel" action="/blog/" role="search"><label class="search-label" for="post-search">Find a little something</label><div class="search-input-wrap"><Icon name="search" size={20} /><input type="search" id="post-search" name="q" placeholder="Search thoughts, stories, anime…" autocomplete="off" /></div><div class="filter-row"><label>Category<select id="category-filter" name="category"><option value="">All categories</option>{categories.map(category => <option value={category}>{category}</option>)}</select></label><label>Tag<select id="tag-filter" name="tag"><option value="">All tags</option>{tags.map(tag => <option value={tag}>{tag}</option>)}</select></label><button type="reset" class="text-button">Clear filters</button></div><noscript><p>Search needs JavaScript. You can read all entries below or browse <a href="/tags/">tags</a> and <a href="/archive/">the archive</a>.</p></noscript></form>
+  <p class="results-count" role="status" aria-live="polite" aria-atomic="true" id="search-status">{entries.length} {entries.length === 1 ? 'entry' : 'entries'} in this little world</p>
+  <div class="listing-posts">{entries.map(post => <div data-post-id={post.id}><PostCard post={post} /></div>)}</div>
+  <div class="empty-state panel" id="no-results" hidden><Icon name="moon" size={30} /><h2>No pages found just yet.</h2><p>Try another word or clear your filters. A different little story might be waiting.</p></div>
+  <button id="load-more" class="button button-dark load-more" hidden>Read a little more <Icon name="arrow" size={16} /></button>
+</section>
+<script>
+  async function initializeSearch() {
+  type SearchEntry = { id: string; title: string; description: string; tags: string[]; category: string; content: string };
+  const root = document.querySelector('[data-post-listing]');
+  if (root) {
+    const input = root.querySelector<HTMLInputElement>('#post-search')!;
+    const category = root.querySelector<HTMLSelectElement>('#category-filter')!;
+    const tag = root.querySelector<HTMLSelectElement>('#tag-filter')!;
+    const status = root.querySelector<HTMLElement>('#search-status')!;
+    const more = root.querySelector<HTMLButtonElement>('#load-more')!;
+    const empty = root.querySelector<HTMLElement>('#no-results')!;
+    const cards = [...root.querySelectorAll<HTMLElement>('[data-post-id]')];
+    const params = new URLSearchParams(location.search);
+    input.value = params.get('q') || '';
+    category.value = params.get('category') || '';
+    tag.value = params.get('tag') || '';
+    let index: SearchEntry[] = [];
+    let limit = 6;
+    const normal = (value: string) => value.normalize('NFKC').toLocaleLowerCase();
+    const update = () => {
+      const words = normal(input.value).trim().split(/\s+/).filter(Boolean);
+      const matching = new Set(index.filter(post => {
+        const text = normal([post.title, post.description, post.tags.join(' '), post.content].join(' '));
+        return (!category.value || category.value === post.category) && (!tag.value || post.tags.includes(tag.value)) && words.every(word => text.includes(word));
+      }).map(post => post.id));
+      let count = 0;
+      cards.forEach(card => { const match = matching.has(card.dataset.postId!); card.hidden = !match || count >= limit; if (match) count++; });
+      empty.hidden = count !== 0;
+      more.hidden = count <= limit;
+      status.textContent = `${count} ${count === 1 ? 'entry' : 'entries'} found${count > limit ? ` · showing ${limit}` : ''}`;
+      const next = new URLSearchParams();
+      if (input.value.trim()) next.set('q', input.value.trim());
+      if (category.value) next.set('category', category.value);
+      if (tag.value) next.set('tag', tag.value);
+      history.replaceState(null, '', `${location.pathname}${next.size ? `?${next}` : ''}`);
+    };
+    try {
+      const response = await fetch('/search-index.json');
+      if (!response.ok) throw new Error('Search index unavailable');
+      index = await response.json();
+      update();
+      input.addEventListener('input', () => { limit = 6; update(); });
+      [category, tag].forEach(select => select.addEventListener('change', () => { limit = 6; update(); }));
+      root.querySelector('form')?.addEventListener('submit', event => { event.preventDefault(); limit = 6; update(); });
+      root.querySelector('form')?.addEventListener('reset', () => { input.value = ''; category.value = ''; tag.value = ''; limit = 6; update(); });
+      more.addEventListener('click', () => {
+        const visible = new Set(cards.filter(card => !card.hidden));
+        limit += 6; update();
+        cards.find(card => !card.hidden && !visible.has(card))?.querySelector<HTMLAnchorElement>('h3 a')?.focus();
+      });
+    } catch {
+      status.textContent = 'Search is taking a little rest. All entries are available below; you can also browse tags and the archive.';
+    }
+  }
+  }
+  void initializeSearch();
+</script>

@@ -1,0 +1,27 @@
+{
+  "name": "sakura-miyus-little-world",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.22.0" },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro check && astro build && node scripts/verify-build.mjs",
+    "preview": "astro preview",
+    "check": "astro check",
+    "assets": "node scripts/prepare-assets.mjs",
+    "test:browser": "node scripts/test-browser.mjs"
+  },
+  "dependencies": {
+    "astro": "^7.4.0",
+    "@astrojs/mdx": "^8.1.0",
+    "@astrojs/rss": "^4.0.19",
+    "@astrojs/sitemap": "^3.7.4"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "typescript": "^5.9.3",
+    "sharp": "^0.35.5",
+    "@playwright/test": "^1.58.0"
+  }
+}

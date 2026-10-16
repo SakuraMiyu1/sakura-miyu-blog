@@ -1,0 +1,7 @@
+---
+import PageLayout from '../layouts/PageLayout.astro';
+import { posts, formatDate, postUrl } from '../lib/blog';
+const entries = await posts();
+const archive = entries.reduce<Record<string, typeof entries>>((result, post) => { const month = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(post.data.pubDate); (result[month] ||= []).push(post); return result; }, {});
+---
+<PageLayout title="The little archive" description="A collection of days, dreams, and words — kept here to find again." eyebrow="EVERY PAGE HAS A PLACE"><div class="panel archive">{Object.entries(archive).map(([month, entries]) => <section><h2>{month}</h2>{entries.map(post => <a href={postUrl(post)}><time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time><span>{post.data.title}</span><span aria-hidden="true">↗</span></a>)}</section>)}{!entries.length && <p>The very first page is still on its way.</p>}</div></PageLayout>

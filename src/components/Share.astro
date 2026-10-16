@@ -1,0 +1,20 @@
+---
+interface Props { title: string; image?: string; }
+const { title, image = '/images/social.jpg' } = Astro.props;
+const url = new URL(Astro.url.pathname, Astro.site).href;
+const query = encodeURIComponent(url);
+const text = encodeURIComponent(title);
+const media = encodeURIComponent(new URL(image, Astro.site).href);
+---
+<div class="share"><span class="small-label">SHARE A LITTLE LOVE</span><div class="share-links"><button id="copy-link" type="button">Copy link</button><a href={`https://twitter.com/intent/tweet?url=${query}&text=${text}`} target="_blank" rel="noopener noreferrer" aria-label="Share on X (opens a new tab)">X ↗</a><a href={`https://www.facebook.com/sharer/sharer.php?u=${query}`} target="_blank" rel="noopener noreferrer" aria-label="Share on Facebook (opens a new tab)">Facebook ↗</a><a href={`https://pinterest.com/pin/create/button/?url=${query}&media=${media}&description=${text}`} target="_blank" rel="noopener noreferrer" aria-label="Share on Pinterest (opens a new tab)">Pinterest ↗</a></div><span id="copy-status" role="status" aria-live="polite"></span><input id="copy-fallback" class="copy-fallback" aria-label="Select and copy this post link" readonly hidden /></div>
+<script>
+  document.querySelector('#copy-link')?.addEventListener('click', async () => {
+    const status = document.querySelector<HTMLElement>('#copy-status')!;
+    try { await navigator.clipboard.writeText(location.href.split('#')[0]); status.textContent = 'Link copied. Thank you for sharing ♡'; }
+    catch {
+      const input = document.querySelector<HTMLInputElement>('#copy-fallback')!;
+      input.value = location.href.split('#')[0]; input.hidden = false; input.focus(); input.select();
+      status.textContent = 'Copy the selected link with Ctrl+C, Cmd+C, or your device’s copy menu.';
+    }
+  });
+</script>

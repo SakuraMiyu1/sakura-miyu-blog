@@ -1,0 +1,8 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import Sidebar from '../components/Sidebar.astro';
+import Follow from '../components/Follow.astro';
+interface Props { title: string; description: string; eyebrow?: string; }
+const { title, description, eyebrow = 'PAGES FROM MY LITTLE WORLD' } = Astro.props;
+---
+<BaseLayout title={title} description={description}><main id="main" class="shell page-main"><div class="page-heading"><span class="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{description}</p></div><div class="content-grid"><div class="main-column"><slot /></div><Sidebar /></div><Follow /></main></BaseLayout>
