@@ -176,4 +176,4 @@ The browser script checks 1920px, 1366px, tablet and mobile layouts, image loadi
 
 To test with an already installed Edge instead of downloading Chromium, set `$env:TEST_BROWSER_CHANNEL = 'msedge'` in PowerShell before `npm run test:browser`.
 
-Original supplied assets are preserved. This repository was prepared locally; publishing and domain/account choices remain yours.
+Original supplied assets are preserved. The source repository is [SakuraMiyu1/sakura-miyu-blog](https://github.com/SakuraMiyu1/sakura-miyu-blog). Use the Cloudflare Pages setup above to connect this repository and select your production domain.
