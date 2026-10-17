@@ -15,6 +15,9 @@ tags:
   - princess-mononoke
   - naruto
 language: uk
+image: /images/blog/sakura-miyu.webp
+imageAlt: Сакура Мію з довгим рожевим волоссям у кімнаті з аніме-плакатами,
+  старим телевізором, відеокасетами та костюмами для косплею.
 featured: false
 draft: false
 seoTitle: "Мій аніме-світ: від Принцеси Мононоке до косплею | Sakura Miyu"
