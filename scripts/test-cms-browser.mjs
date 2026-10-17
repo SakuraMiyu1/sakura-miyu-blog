@@ -1,4 +1,4 @@
-import { chromium } from '@playwright/test';
+import { chromium, expect } from '@playwright/test';
 import { readFile, mkdir } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 
@@ -15,8 +15,16 @@ try {
     await route.fulfill({ response, headers: { ...response.headers(), 'Content-Security-Policy': csp } });
   });
   const errors = [];
+  const backupErrors = [];
   const confirmations = [];
   page.on('pageerror', error => errors.push(error.message));
+  page.on('console', message => {
+    if (/persistLocalDraftBackup|Failed to persist entry|violates the following Content Security Policy/.test(message.text())) backupErrors.push(message.text());
+  });
+  await page.addInitScript(() => {
+    window.cspViolations = [];
+    document.addEventListener('securitypolicyviolation', event => window.cspViolations.push({ directive: event.effectiveDirective, blocked: event.blockedURI }));
+  });
   page.on('dialog', async dialog => { confirmations.push(dialog.message()); await dialog.accept(); });
   await page.goto(origin + '/admin/');
   await page.waitForFunction(() => document.querySelector('#setup-status')?.textContent?.includes('not configured') || document.querySelector('#setup-status')?.textContent?.includes('unavailable'));
@@ -27,6 +35,7 @@ try {
   }
   const config = JSON.parse(await readFile('public/admin/config.yml', 'utf8'));
   config.backend = { name: 'test-repo' };
+  config.logo_url = origin + '/favicon.png';
   const welcome = await readFile('src/content/blog/welcome.md', 'utf8');
   await page.route('**/api/cms-status', route => route.fulfill({ json: { enabled: true } }));
   await page.route('**/admin/config.yml', route => route.fulfill({ json: config }));
@@ -55,6 +64,31 @@ try {
   await page.locator('input[type="file"]').setInputFiles({ name: 'qa-ribbon.png', mimeType: 'image/png', buffer: await readFile('public/favicon.png') });
   await page.getByRole('button', { name: /choose selected/i }).click();
   await page.getByRole('textbox', { name: /^Featured image alt text/ }).fill('A pink sakura blossom and black ribbon');
+  const featuredImage = page.locator('img[role="presentation"]');
+  await expect.poll(() => featuredImage.evaluate(image => image.naturalWidth)).toBeGreaterThan(0);
+  assert.match(await featuredImage.getAttribute('src'), /^blob:/, 'Unpublished media must render from its asset proxy');
+  const backup = async () => page.evaluate(() => new Promise((resolve, reject) => {
+    const request = indexedDB.open('localforage');
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const db = request.result;
+      const read = db.transaction('keyvaluepairs').objectStore('keyvaluepairs').get('backup.blog');
+      read.onsuccess = () => {
+        const value = read.result;
+        db.close();
+        resolve(value ? { raw: value.raw, files: value.mediaFiles.map(media => ({ path: media.path, size: media.file?.size, blob: media.file instanceof Blob })) } : null);
+      };
+      read.onerror = () => { db.close(); reject(read.error); };
+    };
+  }));
+  await expect.poll(async () => (await backup())?.files.some(file => file.blob && file.size > 0 && file.path.endsWith('.webp')), { timeout: 10000 }).toBe(true);
+  assert.match((await backup()).raw, /qa-ribbon.webp/);
+  await page.reload({ waitUntil: 'networkidle' });
+  await expect(page.getByRole('textbox', { name: 'Title', exact: true })).toHaveValue('Маленька мрія · A little dream · 小さな夢');
+  assert.ok(confirmations.some(message => /backup/i.test(message)), 'Reload offers to restore the local backup');
+  await expect.poll(() => featuredImage.evaluate(image => image.naturalWidth)).toBeGreaterThan(0);
+  await expect(page.getByLabel('Publication date', { exact: true })).toHaveValue('2026-10-17');
+  await expect(page.getByLabel(/^Updated date/)).toHaveValue('');
   for (const width of [375, 390, 430, 768, 1366]) {
     await page.setViewportSize({ width, height: 900 });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `Editor overflow at ${width}px`);
@@ -79,6 +113,7 @@ try {
   assert.match(saved.diffs[0].content, /小さな夢を日記に残します/);
   assert.ok(saved.diffs.some(file => file.path.startsWith('public/images/blog/')), `Image stored in the configured repository folder: ${JSON.stringify(saved.diffs.map(file => file.path))}`);
   assert.equal(await page.evaluate(() => !!window.repoFiles.src.content.blog['qa-cms-dream.md']), false, 'Save draft must not publish');
+  await expect(page.getByText('Changes saved', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: /^Status:/ }).click();
   await page.getByText(/^(Set )?Ready$/i).click();
   await page.waitForFunction(() => window.repoFilesUnpublished['blog/qa-cms-dream']?.status === 'pending_publish');
@@ -97,10 +132,13 @@ try {
   assert.ok(confirmations.length > previousConfirmations, 'Deleting an entry requires confirmation');
   assert.equal(await page.evaluate(() => window.repoFiles.src.content.blog['welcome.md'].content), welcome, 'Existing diary is untouched');
   assert.deepEqual(errors, []);
-  console.log('CMS browser checks passed with production CSP: disabled sign-in, self-hosted editor at 375/390/430/768/1366px, Edit/Preview, Unicode text, image upload/WebP processing, correct repository paths, save draft and publish using only an in-memory test backend. Live GitHub login and publishing are not tested by this script.');
+  assert.deepEqual(backupErrors, []);
+  assert.deepEqual(await page.evaluate(() => window.cspViolations), []);
+  console.log('CMS browser checks passed with production CSP: disabled sign-in, editor at 375/390/430/768/1366px, Edit/Preview, Unicode text, visible WebP preview, Blob backup in IndexedDB, reload and restore with image/date values, correct repository paths, save draft and publish using only an in-memory test backend. No CSP violations or backup errors. Live GitHub login and publishing are not tested by this script.');
 } catch (error) {
   const pages = browser.contexts().flatMap(context => context.pages());
   for (const page of pages) {
+    console.error('Memory workflow entries:', JSON.stringify(await page.evaluate(() => Object.entries(window.repoFilesUnpublished || {}).map(([key, value]) => ({ key, diffs: value.diffs?.map(file => ({ path: file.path, content: typeof file.content === 'string' ? file.content.slice(0, 500) : '[asset]' })) })))));
     console.error((await page.locator('body').innerText()).slice(0, 6000));
     console.error(await page.locator('input,textarea,label').evaluateAll(elements => elements.slice(0, 15).map(element => ({ tag: element.tagName, id: element.id, for: element.getAttribute('for'), label: element.textContent.slice(0, 60) }))));
     console.error(await page.locator('body *').evaluateAll(elements => elements.filter(element => element.getBoundingClientRect().right > innerWidth + 2 && getComputedStyle(element).display !== 'none').slice(0, 16).map(element => ({ tag: element.tagName, class: element.className, width: element.getBoundingClientRect().width, right: element.getBoundingClientRect().right }))));

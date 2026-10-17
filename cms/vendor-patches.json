@@ -1,0 +1,22 @@
+{
+  "version": "3.17.1",
+  "file": "decap-cms.js",
+  "patches": [
+    {
+      "source": "decap-cms-core/src/reducers/entries.ts: selectMediaFilePath",
+      "reason": "Resolve this site's root-relative public media URLs through repository assets, including unpublished draft blobs. Keep external URLs and other public paths unchanged.",
+      "find": "function i_(e,t,n,r,i){if(kh(r))return r;const o=r_(e,t,n,i);return(0,yr().join)(o,xh(r))}",
+      "replace": "function i_(e,t,n,r,i){const publicFolder=e.public_folder,publicPrefix=typeof publicFolder===\"string\"?publicFolder.replace(/\\/+$/,\"\")+\"/\":\"\";if(publicPrefix.startsWith(\"/\")&&!publicPrefix.startsWith(\"//\")&&r.startsWith(publicPrefix)){const relativePath=r.slice(publicPrefix.length);if(relativePath&&!relativePath.split(\"/\").some(part=>part===\".\"||part===\"..\"))return(0,yr().join)(r_(e,t,n,i),relativePath)}if(kh(r))return r;const o=r_(e,t,n,i);return(0,yr().join)(o,xh(r))}"
+    },
+    {
+      "source": "decap-cms-lib-auth/src/netlify-auth.js: authorizeCallback",
+      "reason": "Ignore non-string messages and messages from windows other than the OAuth popup before calling data.indexOf. Preserve exact origin checks and the Decap authorization protocol.",
+      "find": "authorizeCallback(e,t){const n=r=>{if(r.origin===this.base_url){if(0===r.data.indexOf(",
+      "replace": "authorizeCallback(e,t){const n=r=>{if(r.origin===this.base_url&&r.source===this.authWindow&&typeof r.data===\"string\"){if(0===r.data.indexOf("
+    }
+  ],
+  "original": {
+    "bytes": 4855393,
+    "sha256": "95e216ad2ec85d48993e000e3b876ce95ad01b161a4f4652d9eb21b4664e93dc"
+  }
+}

@@ -23,6 +23,15 @@ assert.ok(!config.media_library?.name, 'No external media provider');
 const routes = JSON.parse(await readFile('public/_routes.json', 'utf8'));
 assert.deepEqual(routes.include, ['/api/auth', '/api/callback', '/api/cms-status']);
 const manifest = JSON.parse(await readFile('cms/vendor-manifest.json', 'utf8'));
+const patches = JSON.parse(await readFile('cms/vendor-patches.json', 'utf8'));
+assert.equal(patches.version, manifest.version);
+let originalVendor = await readFile('public/admin/vendor/' + patches.file, 'utf8');
+for (const patch of [...patches.patches].reverse()) {
+  assert.equal(originalVendor.split(patch.replace).length, 2, `Exact local vendor patch: ${patch.source}`);
+  originalVendor = originalVendor.replace(patch.replace, patch.find);
+}
+assert.equal(Buffer.byteLength(originalVendor), patches.original.bytes);
+assert.equal(createHash('sha256').update(originalVendor).digest('hex'), patches.original.sha256, 'Reversing the documented patches reproduces the pinned upstream release');
 const vendor = (await readdir('public/admin/vendor')).sort();
 assert.deepEqual(vendor, Object.keys(manifest.files).sort());
 for (const [name, expected] of Object.entries(manifest.files)) {
