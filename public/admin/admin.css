@@ -1,0 +1,41 @@
+:root { color-scheme: light; font-family: system-ui, sans-serif; }
+body { margin: 0; background: #fff0f5; color: #21131f; }
+[hidden] { display: none !important; }
+.setup-card { box-sizing: border-box; max-width: 640px; margin: 10vh auto; padding: 28px; line-height: 1.7; border: 1px solid #e8a0bf; border-radius: 12px; background: #fff; }
+.setup-card h1 { font-size: clamp(24px, 5vw, 32px); line-height: 1.3; }
+.setup-card a { color: #a51950; display: inline-flex; min-height: 44px; align-items: center; }
+.guide { max-width: 880px; margin: 32px auto; overflow-wrap: anywhere; }
+.guide h2 { margin-top: 32px; line-height: 1.4; }
+.guide li + li { margin-top: 10px; }
+:focus-visible { outline: 3px solid #c2185b; outline-offset: 3px; }
+.mobile-editor-bar { display: none; }
+.Toastify__toast-container { max-width: calc(100vw - 16px); overflow: hidden; }
+@media (max-width: 800px) {
+  #nc-root [class*="-EditorContainer"],
+  #nc-root [class*="-ToolbarContainer"] { min-width: 0 !important; width: 100% !important; }
+  #nc-root [class*="-EditorContainer"] { padding-top: 116px !important; }
+  #nc-root [class*="-AppHeaderSiteLink"],
+  #nc-root [class*="-BackCollection"] { display: none !important; }
+  #nc-root [class*="-ToolbarSectionBackLink"] { padding-inline: 10px !important; min-width: 44px; }
+  #nc-root [class*="-BackArrow"] { margin-right: 0 !important; }
+  #nc-root [class*="-ToolbarSectionMain"] { min-width: 0; padding-inline: 6px !important; overflow-x: auto; gap: 8px; }
+  #nc-root [class*="-ToolbarSectionMain"] > div { flex-shrink: 0; }
+  #nc-root [class*="-ToolbarContainer"] button { padding-inline: 8px !important; margin-inline: 2px !important; min-height: 44px; }
+  #nc-root [class*="-ViewControls"],
+  #nc-root .Resizer { display: none !important; }
+  #nc-root .SplitPane { display: block !important; min-width: 0 !important; width: 100% !important; }
+  #nc-root .Pane { width: 100% !important; min-width: 0 !important; max-width: 100% !important; height: 100% !important; }
+  body[data-mobile-pane="edit"] #nc-root .Pane2,
+  body[data-mobile-pane="preview"] #nc-root .Pane1 { display: none !important; }
+  body:has([class*="-EditorContainer"]) .mobile-editor-bar { display: flex; position: fixed; top: 66px; left: 0; right: 0; height: 50px; align-items: center; gap: 8px; padding-inline: 12px; border-block: 1px solid #e8a0bf; background: #fff0f5; z-index: 350; }
+  .mobile-editor-bar button, .mobile-editor-bar a { font: 600 14px system-ui, sans-serif; min-height: 44px; padding: 10px 16px; border: 0; border-radius: 5px; color: #7b254b; background: transparent; }
+  .mobile-editor-bar button[aria-pressed="true"] { background: #17121c; color: #fff0f5; }
+  .mobile-editor-bar a { margin-left: auto; text-decoration: underline; box-sizing: border-box; }
+  #nc-root input, #nc-root textarea, #nc-root [contenteditable="true"] { font-size: 16px !important; }
+  #nc-root button { min-height: 44px; }
+  #nc-root [class*="-ControlPaneContainer"] { padding-inline: 10px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+@media (max-width: 680px) { .setup-card { margin: 24px 12px; padding: 22px; } }

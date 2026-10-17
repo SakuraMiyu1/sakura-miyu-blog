@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { readFile, writeFile, unlink, access } from 'node:fs/promises';
+import { readFile, writeFile, unlink, access, mkdir, rmdir } from 'node:fs/promises';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 import { chromium } from '@playwright/test';
@@ -31,10 +31,17 @@ const fixtures = [
 ];
 let server;
 let browser;
+const mediaDir = path.resolve(cwd, 'public/images/blog/qa-fixture-b');
+assert.ok(mediaDir.startsWith(path.join(cwd, 'public/images/blog') + path.sep));
 try {
+  await mkdir(mediaDir, { recursive: true });
+  const image = path.join(mediaDir, 'qa-image.webp');
+  await writeFile(image, await readFile('public/images/avatar.webp'), { flag: 'wx' });
+  created.push(image);
   for (const [id, date, category, tags, body, draft = false] of fixtures) {
     const filename = path.join(contentDir, `qa-fixture-${id}.md`);
-    const text = `---\ntitle: "QA ${id}"\ndescription: "Temporary local QA entry"\npubDate: ${date}\ncategory: ${category}\ntags: ${JSON.stringify(tags)}\nlanguage: en\ndraft: ${draft}\n---\n\n${body}\n`;
+    const cmsFields = id === 'a' ? 'slug: qa-fixture-a\nseoTitle: CMS test SEO title\nseoDescription: CMS test SEO description\nupdatedDate: ""\nimage: ""\n' : id === 'b' ? 'image: /images/blog/qa-fixture-b/qa-image.webp\nimageAlt: Temporary test image\n' : '';
+    const text = `---\ntitle: "QA ${id}"\ndescription: "Temporary local QA entry"\npubDate: ${date}\ncategory: ${category}\ntags: ${JSON.stringify(tags)}\nlanguage: en\ndraft: ${draft}\n${cmsFields}---\n\n${body}\n`;
     await writeFile(filename, text, { flag: 'wx' });
     created.push(filename);
   }
@@ -80,6 +87,8 @@ try {
   await page.goto(origin + '/categories/anime/');
   assert.equal(await page.locator('.main-column .post-card').count(), 4, 'Category and matching tagged entries are relevant');
   await page.goto(origin + '/blog/qa-fixture-a/');
+  assert.match(await page.title(), /^CMS test SEO title/);
+  assert.equal(await page.locator('meta[name="description"]').getAttribute('content'), 'CMS test SEO description');
   assert.equal(await page.locator('.post-pagination [rel="prev"]').getAttribute('href'), '/blog/qa-fixture-b/');
   assert.equal(await page.locator('.post-pagination [rel="next"]').getAttribute('href'), '/blog/welcome/');
   const related = await page.locator('.related .post-card :is(h2,h3) a').evaluateAll(links => links.map(link => link.getAttribute('href')));
@@ -91,6 +100,8 @@ try {
   assert.equal(await page.locator('.post-pagination [rel="prev"]').count(), 0);
   assert.equal(await page.locator('.post-pagination [rel="next"]').count(), 1);
   assert.equal(await page.locator('.related').count(), 0);
+  await page.goto(origin + '/blog/qa-fixture-b/');
+  assert.equal(await page.locator('.post-cover').evaluate(image => image.complete && image.naturalWidth > 0), true, 'Repository-uploaded image resolves');
   await page.goto(origin + '/archive/');
   assert.deepEqual(await page.locator('.archive-year > h2').allTextContents(), ['2026', '2025', '2024']);
   assert.equal(await page.locator('.archive-month li').count(), 9);
@@ -101,5 +112,6 @@ try {
   await browser?.close();
   server?.kill();
   for (const filename of created) await unlink(filename);
+  await rmdir(mediaDir);
   assert.deepEqual(await readFile(path.join(contentDir, 'welcome.md')), original, 'Original diary entry remains byte-for-byte unchanged');
 }

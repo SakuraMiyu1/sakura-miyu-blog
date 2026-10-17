@@ -16,7 +16,7 @@ const { Content, headings } = await render(post);
 const languageAnchors = [{ id: 'ukrainian', label: '🇺🇦 Українська', lang: 'uk' }, { id: 'english', label: '🇬🇧 English', lang: 'en' }, { id: 'japanese', label: '🇯🇵 日本語', lang: 'ja' }].filter(anchor => headings.some(heading => heading.slug === anchor.id) || new RegExp(`id=["']${anchor.id}["']`).test(post.body || ''));
 const jsonLd = {
   '@context': 'https://schema.org', '@type': 'BlogPosting', headline: post.data.title,
-  description: post.data.description, datePublished: post.data.pubDate.toISOString(),
+  description: post.data.seoDescription || post.data.description, datePublished: post.data.pubDate.toISOString(),
   dateModified: (post.data.updatedDate || post.data.pubDate).toISOString(),
   author: { '@type': 'Person', name: site.author, url: new URL('/about/', Astro.site).href },
   mainEntityOfPage: new URL(postUrl(post), Astro.site).href,
@@ -25,7 +25,7 @@ const jsonLd = {
   publisher: { '@type': 'Person', name: site.author }
 };
 ---
-<BaseLayout title={post.data.title} description={post.data.description} image={post.data.image} article lang={post.data.language === 'multilingual' ? 'en' : post.data.language}>
+<BaseLayout title={post.data.seoTitle || post.data.title} description={post.data.seoDescription || post.data.description} image={post.data.image} article lang={post.data.language === 'multilingual' ? 'en' : post.data.language}>
   <Fragment slot="head"><script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} /><meta property="article:published_time" content={post.data.pubDate.toISOString()} /><meta property="article:modified_time" content={(post.data.updatedDate || post.data.pubDate).toISOString()} /></Fragment>
   <main id="main" class="shell page-main">
     <a href="/blog/" class="text-link back-link">← Back to Blog</a>

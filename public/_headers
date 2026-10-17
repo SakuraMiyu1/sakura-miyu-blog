@@ -5,3 +5,7 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=()
 /_astro/*
   Cache-Control: public, max-age=31536000, immutable
+/admin/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://avatars.githubusercontent.com https://raw.githubusercontent.com; connect-src 'self' https://api.github.com https://raw.githubusercontent.com; font-src 'self' data:; frame-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'

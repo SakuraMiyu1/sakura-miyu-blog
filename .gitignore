@@ -2,6 +2,9 @@ node_modules/
 dist/
 .astro/
 .env
+.dev.vars
+.dev.vars.*
+.wrangler/
 .env.*
 !.env.example
 .npm-cache/

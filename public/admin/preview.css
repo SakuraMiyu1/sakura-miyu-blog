@@ -1,0 +1,6 @@
+body { font-family: Georgia, 'Yu Mincho', serif; background: #fff0f5; color: #21131f; margin: 0; line-height: 1.8; overflow-wrap: anywhere; }
+.diary-preview { max-width: 760px; margin: auto; padding: 24px; }
+h1 { font-size: 30px; line-height: 1.35; } h2 { font-size: 25px; }
+img { max-width: 100%; height: auto; border-radius: 8px; }
+a { color: #a51950; } pre { overflow-x: auto; }
+hr { border: 0; border-top: 1px solid #e8a0bf; margin-block: 28px; }

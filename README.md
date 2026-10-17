@@ -52,6 +52,8 @@ package-lock.json
 
 ## Add a new post
 
+An optional self-hosted **Decap CMS** writing desk is prepared at `/admin/`. See [CMS_SETUP.md](CMS_SETUP.md) for the one-time GitHub OAuth setup, server-side secret handling, draft/publish workflow, iPhone guide and the £0 cost report. Until it is configured, sign-in is explicitly disabled. The public blog continues to work without the CMS. All editor assets are pinned locally with MIT licenses and SHA-256 checksums; the public blog does not load them. No paid service or new npm dependency was added.
+
 Copy `templates/blog-post.md` to `src/content/blog/my-new-entry.md` (or `.mdx`), replace its text and publication date, then set `draft: false` when ready. Or create a file with this frontmatter:
 
 ```yaml
@@ -73,6 +75,8 @@ imageAlt: "Describe the image for readers who cannot see it"
 ```
 
 Write your content below the frontmatter. `image` and `imageAlt` are optional: omit them if there is no image. Images belong in `public/images/`. Dates use `YYYY-MM-DD`. A blank `updatedDate` is supported; add a date when revising a published entry. The filename becomes `/blog/my-new-entry/`; nested folders are supported. Avoid changing a published filename unless you also add a redirect.
+
+Optional CMS metadata `seoTitle` and `seoDescription` override post SEO/social metadata; empty values fall back to the main title/description. The optional `slug` frontmatter field helps Decap name new Markdown files; public routes continue to follow filenames. CMS-uploaded images go to `public/images/blog/`.
 
 Set `draft: true` to exclude a post from the public site, RSS, search, related posts, and archives. Future-dated posts are also excluded until a build runs after their publication date; there is no automatic scheduled publishing on a static host. The featured entry is the newest published post with `featured: true`, with the newest entry as a fallback. Mark posts as drafts before committing if they are not ready for public GitHub.
 

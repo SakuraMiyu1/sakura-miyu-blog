@@ -1,0 +1,224 @@
+{
+  "backend": {
+    "name": "github",
+    "repo": "SakuraMiyu1/sakura-miyu-blog",
+    "branch": "main",
+    "base_url": "https://sakura-miyu-blog.pages.dev",
+    "auth_endpoint": "api/auth",
+    "auth_scope": "public_repo",
+    "squash_merges": true
+  },
+  "publish_mode": "editorial_workflow",
+  "site_url": "https://sakura-miyu-blog.pages.dev",
+  "display_url": "https://sakura-miyu-blog.pages.dev",
+  "logo_url": "https://sakura-miyu-blog.pages.dev/favicon.png",
+  "locale": "en",
+  "show_preview_links": false,
+  "media_folder": "public/images/blog",
+  "public_folder": "/images/blog",
+  "media_processing": {
+    "enabled": true,
+    "format": {
+      "enabled": true,
+      "default": "webp"
+    },
+    "quality": 82,
+    "width": 1600,
+    "height": null
+  },
+  "slug": {
+    "encoding": "ascii",
+    "clean_accents": true,
+    "sanitize_replacement": "-"
+  },
+  "collections": [
+    {
+      "name": "blog",
+      "label": "Diary entries",
+      "label_singular": "Diary entry",
+      "folder": "src/content/blog",
+      "create": true,
+      "delete": true,
+      "extension": "md",
+      "format": "frontmatter",
+      "slug": "{{fields.slug}}",
+      "preview_path": "blog/{{slug}}",
+      "summary": "{{title}} · {{pubDate}}",
+      "sortable_fields": [
+        "pubDate",
+        "title"
+      ],
+      "editor": {
+        "preview": true
+      },
+      "fields": [
+        {
+          "label": "Title",
+          "name": "title",
+          "widget": "string"
+        },
+        {
+          "label": "URL slug",
+          "name": "slug",
+          "widget": "string",
+          "required": false,
+          "pattern": [
+            "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "Use lowercase English letters, numbers and hyphens."
+          ],
+          "hint": "For a NEW entry, enter a unique address such as a-quiet-morning. Existing entry URLs are kept unchanged."
+        },
+        {
+          "label": "Description",
+          "name": "description",
+          "widget": "text"
+        },
+        {
+          "label": "Publication date",
+          "name": "pubDate",
+          "widget": "datetime",
+          "format": "YYYY-MM-DD",
+          "date_format": "DD/MM/YYYY",
+          "time_format": false,
+          "picker_utc": true
+        },
+        {
+          "label": "Updated date",
+          "name": "updatedDate",
+          "widget": "datetime",
+          "required": false,
+          "default": "",
+          "format": "YYYY-MM-DD",
+          "date_format": "DD/MM/YYYY",
+          "time_format": false,
+          "picker_utc": true
+        },
+        {
+          "label": "Category",
+          "name": "category",
+          "widget": "select",
+          "default": "Diary",
+          "options": [
+            "Diary",
+            "Anime",
+            "Cosplay",
+            "Gaming",
+            "Writing",
+            "Gothic Kawaii",
+            "University",
+            "Creative Writing",
+            "Fanfiction"
+          ]
+        },
+        {
+          "label": "Tags",
+          "name": "tags",
+          "widget": "list",
+          "default": [],
+          "field": {
+            "label": "Tag",
+            "name": "tag",
+            "widget": "string",
+            "pattern": [
+              ".*[A-Za-z0-9\\u00C0-\\uFFFF].*",
+              "Include a letter or number."
+            ]
+          }
+        },
+        {
+          "label": "Language",
+          "name": "language",
+          "widget": "select",
+          "default": "multilingual",
+          "options": [
+            {
+              "label": "🇺🇦 + 🇬🇧 + 🇯🇵 Multilingual",
+              "value": "multilingual"
+            },
+            {
+              "label": "🇺🇦 Українська",
+              "value": "uk"
+            },
+            {
+              "label": "🇬🇧 English",
+              "value": "en"
+            },
+            {
+              "label": "🇯🇵 日本語",
+              "value": "ja"
+            }
+          ]
+        },
+        {
+          "label": "Featured image",
+          "name": "image",
+          "widget": "image",
+          "required": false,
+          "choose_url": false,
+          "allow_multiple": false,
+          "media_library": {
+            "config": {
+              "max_file_size": 5242880
+            }
+          }
+        },
+        {
+          "label": "Featured image alt text",
+          "name": "imageAlt",
+          "widget": "string",
+          "required": false,
+          "hint": "Describe the image for readers who cannot see it. Required when an image is selected."
+        },
+        {
+          "label": "Feature on the homepage",
+          "name": "featured",
+          "widget": "boolean",
+          "default": false
+        },
+        {
+          "label": "Keep hidden even after Publish",
+          "name": "draft",
+          "widget": "boolean",
+          "default": false,
+          "hint": "Save draft uses a separate branch. Leave this switch OFF when publishing. ON always hides the entry from the public blog."
+        },
+        {
+          "label": "SEO title",
+          "name": "seoTitle",
+          "widget": "string",
+          "required": false,
+          "pattern": [
+            "^.{0,100}$",
+            "Up to 100 characters."
+          ],
+          "hint": "Leave empty to use the article title."
+        },
+        {
+          "label": "SEO description",
+          "name": "seoDescription",
+          "widget": "text",
+          "required": false,
+          "pattern": [
+            "^[\\s\\S]{0,200}$",
+            "Up to 200 characters."
+          ],
+          "hint": "Leave empty to use the description."
+        },
+        {
+          "label": "Story",
+          "name": "body",
+          "widget": "markdown",
+          "modes": [
+            "raw"
+          ],
+          "editor_components": [
+            "image",
+            "code-block"
+          ],
+          "default": "<section lang=\"uk\">\n\n<h2 id=\"ukrainian\">🇺🇦 Українська</h2>\n\n\n\n</section>\n\n---\n\n<section lang=\"en\">\n\n<h2 id=\"english\">🇬🇧 English</h2>\n\n\n\n</section>\n\n---\n\n<section lang=\"ja\">\n\n<h2 id=\"japanese\">🇯🇵 日本語</h2>\n\n\n\n</section>\n",
+          "hint": "Write between the language headings and closing section tags. Keep blank lines around HTML. For one language, select it above and write ordinary Markdown. See the writing guide."
+        }
+      ]
+    }
+  ]
+}

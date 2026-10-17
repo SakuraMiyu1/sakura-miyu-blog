@@ -8,6 +8,9 @@ const blog = defineCollection({
   schema: z.object({
     title: z.string(),
     description: z.string(),
+    slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).optional(),
+    seoTitle: z.preprocess(value => value === null || value === '' ? undefined : value, z.string().max(100).optional()),
+    seoDescription: z.preprocess(value => value === null || value === '' ? undefined : value, z.string().max(200).optional()),
     pubDate: z.coerce.date(),
     updatedDate: z.preprocess(value => value === null || value === '' ? undefined : value, z.coerce.date().optional()),
     tags: z.array(z.string().trim().min(1).regex(/[\p{L}\p{N}]/u, 'A tag must contain a letter or number.')).default([]),
@@ -15,7 +18,7 @@ const blog = defineCollection({
     language: z.enum(['multilingual', 'uk', 'en', 'ja']).default('en'),
     featured: z.boolean().default(false),
     draft: z.boolean().default(false),
-    image: z.string().regex(/^\/images\/[a-zA-Z0-9/_.-]+$/).optional(),
+    image: z.preprocess(value => value === null || value === '' ? undefined : value, z.string().regex(/^\/images\/[a-zA-Z0-9/_.-]+$/).optional()),
     imageAlt: z.string().optional()
   })
 });
