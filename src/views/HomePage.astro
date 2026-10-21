@@ -1,0 +1,29 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/Hero.astro';
+import Sidebar from '../components/Sidebar.astro';
+import PostCard from '../components/PostCard.astro';
+import Icon from '../components/Icon.astro';
+import { posts, categories, categoryUrl } from '../lib/blog';
+import { localeFromPath, localePath, topicLabel, t } from '../lib/i18n';
+import { pageCopy } from '../lib/page-copy';
+const locale = localeFromPath(Astro.url.pathname);
+const copy = pageCopy[locale].home;
+const entries = await posts(locale);
+const featured = entries.find(post => post.data.featured) || entries[0];
+const recent = entries.filter(post => post.id !== featured?.id).slice(0, 3);
+const topicIcons = ['book', 'moon', 'bow', 'game', 'pen', 'heart', 'book', 'pen', 'sparkle'];
+---
+<BaseLayout>
+  <main id="main"><Hero /><div class="shell home-main">
+    <div class="welcome-strip"><span aria-hidden="true">✿</span><p>{copy.welcomeStrip}</p><span aria-hidden="true">♡</span></div>
+    <div class="content-grid"><div class="main-column">
+      <section class="welcome panel"><span class="eyebrow">{t(locale, 'eyebrow')} <span aria-hidden="true">♡</span></span><h2>{copy.welcomeTitle}</h2><p>{copy.welcomeIntro}</p><a href={localePath(locale, 'about')} class="text-link">{copy.meet} <Icon name="arrow" size={15} /></a><span class="welcome-flower" aria-hidden="true">✿</span></section>
+      {featured && <section class="home-posts" aria-labelledby="featured-heading"><div class="section-heading"><div><span class="eyebrow">{copy.featuredEyebrow}</span><h2 id="featured-heading">{copy.featuredTitle} <Icon name="heart" size={22} /></h2></div><a href={localePath(locale, 'blog')} class="text-link">{copy.allEntries} <Icon name="arrow" size={15} /></a></div><PostCard post={featured} featured headingLevel="h3" /></section>}
+      {recent.length > 0 && <section class="home-posts" aria-labelledby="recent-heading"><div class="section-heading"><div><span class="eyebrow">{copy.recentEyebrow}</span><h2 id="recent-heading">{copy.recentTitle} <span aria-hidden="true">🌸</span></h2></div></div>{recent.map(post => <PostCard post={post} headingLevel="h3" />)}</section>}
+      {!entries.length && <section class="empty-state panel home-empty"><h2>{t(locale, 'noPostsTitle')}</h2><p>{t(locale, 'noPostsDescription')}</p></section>}
+      <section class="topics-section" aria-labelledby="topics-heading"><div class="section-heading"><div><span class="eyebrow">{copy.topicsEyebrow}</span><h2 id="topics-heading">{copy.topicsTitle}</h2></div></div><div class="category-grid">{categories.map((category, index) => <a href={categoryUrl(category, locale)} class="category-tile"><Icon name={topicIcons[index]} size={25} /><span>{topicLabel(category, locale)}</span><span aria-hidden="true">↗</span></a>)}</div></section>
+      <section class="diary-note"><Icon name="moon" size={28} /><blockquote>{copy.quote}</blockquote><span>{copy.quoteLabel} <span aria-hidden="true">♡</span></span></section>
+    </div><Sidebar /></div>
+  </div></main>
+</BaseLayout>

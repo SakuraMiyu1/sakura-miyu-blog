@@ -1,23 +1,29 @@
 ---
 import Icon from './Icon.astro';
+import LanguagePicker from './LanguagePicker.astro';
+import { localeFromPath, localePath, t, topicLabel, type Locale } from '../lib/i18n';
+interface Props { alternates?: Partial<Record<Locale, string>>; }
+const { alternates } = Astro.props;
 const pathname = Astro.url.pathname;
-const links = [['Home', '/'], ['Diary', '/diary/'], ['Cosplay', '/cosplay/'], ['Anime', '/anime/'], ['Gaming', '/gaming/'], ['Writing', '/writing/'], ['About', '/about/']];
+const locale = localeFromPath(pathname);
+const links = [[t(locale, 'home'), ''], [t(locale, 'diary'), 'diary'], [topicLabel('Cosplay', locale), 'cosplay'], [topicLabel('Anime', locale), 'anime'], [topicLabel('Gaming', locale), 'gaming'], [t(locale, 'writing'), 'writing'], [t(locale, 'about'), 'about']];
 ---
-<div class="topline"><div class="shell topline-inner"><span><span aria-hidden="true">✦</span> a little corner of the internet, made with love</span><a href="/rss.xml"><Icon name="rss" size={13} /> RSS feed</a></div></div>
+<div class="topline"><div class="shell topline-inner"><span><span aria-hidden="true">✦</span> {t(locale, 'topline')}</span><a href={localePath(locale, 'rss.xml')}><Icon name="rss" size={13} /> {t(locale, 'rss')}</a></div></div>
 <header class="site-header shell">
-  <a href="/" class="brand" aria-label="Sakura Miyu's Little World, home"><span class="brand-mark"><Icon name="flower" size={31} /></span><span>Sakura Miyu<span class="brand-japanese" lang="ja">さくらみゆ</span></span></a>
-  <span class="header-note">a diary of little things &amp; lovely dreams <span aria-hidden="true">☾</span></span>
-  <button class="menu-toggle" aria-label="Open navigation" aria-controls="main-nav" aria-expanded="false"><span></span><span></span><span></span></button>
+  <a href={localePath(locale)} class="brand" aria-label={t(locale, 'brandHome')}><span class="brand-mark"><Icon name="flower" size={31} /></span><span>Sakura Miyu<span class="brand-japanese" lang="ja">さくらみゆ</span></span></a>
+  <span class="header-note">{t(locale, 'headerNote')} <span aria-hidden="true">☾</span></span>
+  <LanguagePicker alternates={alternates} />
+  <button class="menu-toggle" aria-label={t(locale, 'openNav')} data-open-label={t(locale, 'openNav')} data-close-label={t(locale, 'closeNav')} aria-controls="main-nav" aria-expanded="false"><span></span><span></span><span></span></button>
 </header>
-<nav class="navigation" id="main-nav" aria-label="Main navigation"><div class="shell nav-inner">{links.map(([label, href]) => <a href={href} aria-current={pathname === href || (href !== '/' && pathname.startsWith(href)) ? 'page' : undefined}>{label === 'Home' && <Icon name="heart" size={14} />}{label}</a>)}<a class="nav-search" href="/blog/" aria-label="Search all posts"><Icon name="search" size={18} /><span class="mobile-only">Search the blog</span></a></div></nav>
+<nav class="navigation" id="main-nav" aria-label={t(locale, 'mainNav')}><div class="shell nav-inner">{links.map(([label, path]) => { const href = localePath(locale, path); return <a href={href} aria-current={pathname === href || (path && pathname.startsWith(href)) ? 'page' : undefined}>{!path && <Icon name="heart" size={14} />}{label}</a>; })}<a class="nav-search" href={localePath(locale, 'blog')} aria-label={t(locale, 'searchPosts')}><Icon name="search" size={18} /><span class="mobile-only">{t(locale, 'searchBlog')}</span></a></div></nav>
 <script>
   const toggle = document.querySelector<HTMLButtonElement>('.menu-toggle');
   const nav = document.querySelector<HTMLElement>('#main-nav');
-  const close = () => { toggle?.setAttribute('aria-expanded', 'false'); toggle?.setAttribute('aria-label', 'Open navigation'); nav?.classList.remove('is-open'); };
+  const close = () => { toggle?.setAttribute('aria-expanded', 'false'); if (toggle) toggle.setAttribute('aria-label', toggle.dataset.openLabel!); nav?.classList.remove('is-open'); };
   toggle?.addEventListener('click', () => {
     const open = toggle.getAttribute('aria-expanded') !== 'true';
     toggle.setAttribute('aria-expanded', String(open));
-    toggle.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
+    toggle.setAttribute('aria-label', open ? toggle.dataset.closeLabel! : toggle.dataset.openLabel!);
     nav?.classList.toggle('is-open', open);
   });
   document.addEventListener('keydown', event => { if (event.key === 'Escape' && toggle?.getAttribute('aria-expanded') === 'true') { close(); toggle.focus(); } });

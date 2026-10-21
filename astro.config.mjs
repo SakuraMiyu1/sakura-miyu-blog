@@ -21,7 +21,7 @@ export default defineConfig({
   output: 'static',
   compressHTML: true,
   trailingSlash: 'always',
-  integrations: [mdx(), sitemap({ filter: (page) => !page.endsWith('/404/') && !page.endsWith('/admin/') })],
+  integrations: [mdx(), sitemap({ filter: (page) => /^\/(uk|en|ja)\//.test(new URL(page).pathname) && !page.endsWith('/404/') })],
   build: { format: 'directory' },
   vite: { server: { fs: { strict: true } } }
 });

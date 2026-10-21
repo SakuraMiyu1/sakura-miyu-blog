@@ -1,0 +1,34 @@
+---
+import { locales, localeFromPath, localePath, t, type Locale } from '../lib/i18n';
+interface Props { alternates?: Partial<Record<Locale, string>>; }
+const { alternates = {} } = Astro.props;
+const locale = localeFromPath(Astro.url.pathname);
+const names = { uk: 'Українська', en: 'English', ja: '日本語' };
+const codes = { uk: 'UA', en: 'EN', ja: 'JP' };
+const flags = { uk: '🇺🇦', en: '🇬🇧', ja: '🇯🇵' };
+---
+<details class="language-picker" data-current-locale={locale}>
+  <summary aria-label={`${t(locale, 'languagePicker')}: ${names[locale]}`}><span aria-hidden="true">🌐</span> {names[locale]} <span class="language-chevron" aria-hidden="true">⌄</span></summary>
+  <ul aria-label={t(locale, 'languagePicker')}>{locales.map(value => <li><a href={alternates[value] || localePath(value)} lang={value} hreflang={value} data-locale={value} aria-current={locale === value ? 'true' : undefined}><span><span aria-hidden="true">{flags[value]}</span> {names[value]}</span><span aria-hidden="true">{codes[value]}{locale === value ? ' ✓' : ''}</span></a></li>)}</ul>
+</details>
+<script>
+  document.querySelectorAll<HTMLDetailsElement>('.language-picker').forEach(picker => {
+    const summary = picker.querySelector<HTMLElement>('summary')!;
+    const links = [...picker.querySelectorAll<HTMLAnchorElement>('a[data-locale]')];
+    if (/^\/(uk|en|ja)(\/|$)/.test(location.pathname)) {
+      try { localStorage.setItem('sakura-language', picker.dataset.currentLocale!); } catch {}
+    }
+    links.forEach(link => link.addEventListener('click', () => { try { localStorage.setItem('sakura-language', link.dataset.locale!); } catch {} }));
+    picker.addEventListener('keydown', event => {
+      if (event.key === 'Escape') { picker.open = false; summary.focus(); }
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault(); picker.open = true;
+        const position = links.indexOf(document.activeElement as HTMLAnchorElement);
+        const next = position < 0 ? event.key === 'ArrowDown' ? 0 : links.length - 1 : (position + (event.key === 'ArrowDown' ? 1 : -1) + links.length) % links.length;
+        links[next]?.focus();
+      }
+    });
+    document.addEventListener('click', event => { if (event.target instanceof Node && !picker.contains(event.target)) picker.open = false; });
+    picker.addEventListener('focusout', event => { if (event.relatedTarget instanceof Node && !picker.contains(event.relatedTarget)) picker.open = false; });
+  });
+</script>

@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Icon from '../components/Icon.astro';
+import { localeFromPath, localePath, t } from '../lib/i18n';
+import { pageCopy } from '../lib/page-copy';
+const locale = localeFromPath(Astro.url.pathname);
+const copy = pageCopy[locale].notFound;
+---
+<BaseLayout title={copy.title} description={copy.description} noindex><main id="main" class="shell not-found panel"><div class="lost-decoration" aria-hidden="true"><span>✿</span><Icon name="bow" size={40} /><span>✧</span></div><span class="eyebrow">{copy.eyebrow}</span><h1>{copy.heading} <span aria-hidden="true">🌸</span></h1><p>{copy.description}</p><div class="lost-actions"><a href={localePath(locale)} class="button button-dark">{t(locale, 'returnHome')} 🏡</a><a href={localePath(locale, 'blog')} class="button button-outline">{t(locale, 'blog')} 📖</a></div></main></BaseLayout>

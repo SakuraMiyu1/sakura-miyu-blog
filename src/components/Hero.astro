@@ -1,8 +1,10 @@
 ---
 import Icon from './Icon.astro';
+import { localeFromPath, localePath, t } from '../lib/i18n';
+const locale = localeFromPath(Astro.url.pathname);
 ---
 <section class="hero shell" aria-labelledby="hero-title">
-  <img class="hero-art" src="/images/hero.webp" alt="Sakura Miyu, a pink-haired anime character with a black ribbon, beneath sakura blossoms" width="960" height="560" fetchpriority="high" />
-  <div class="hero-copy"><div class="eyebrow"><span aria-hidden="true">✧</span> WELCOME TO MY LITTLE CORNER <span aria-hidden="true">✧</span></div><h1 id="hero-title">Sakura Miyu's<br /><em>Little World</em></h1><p>A Little World Between Reality &amp; Dreams</p><span class="hero-japanese" lang="ja">現実と夢のあいだに <span aria-hidden="true">✿</span></span><a class="button button-pink" href="/blog/">Step into my world <Icon name="arrow" size={16} /></a></div>
+  <img class="hero-art" src="/images/hero.webp" alt={t(locale, 'imageAlt')} width="960" height="560" fetchpriority="high" />
+  <div class="hero-copy"><div class="eyebrow"><span aria-hidden="true">✧</span> {t(locale, 'eyebrow')} <span aria-hidden="true">✧</span></div><h1 id="hero-title">Sakura Miyu's<br /><em>Little World</em></h1><p>{t(locale, 'tagline')}</p><span class="hero-japanese">{t(locale, 'headerNote')} <span aria-hidden="true">✿</span></span><a class="button button-pink" href={localePath(locale, 'blog')}>{t(locale, 'stepInside')} <Icon name="arrow" size={16} /></a></div>
   <span class="hero-star star-one" aria-hidden="true">✧</span><span class="hero-star star-two" aria-hidden="true">✦</span>
 </section>

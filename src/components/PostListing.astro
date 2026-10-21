@@ -2,21 +2,23 @@
 import PostCard from './PostCard.astro';
 import Icon from './Icon.astro';
 import { posts, categories, allTags } from '../lib/blog';
-const entries = await posts();
-const tags = await allTags();
+import { localeFromPath, localePath, t, topicLabel } from '../lib/i18n';
+const locale = localeFromPath(Astro.url.pathname);
+const entries = await posts(locale);
+const tags = await allTags(locale);
 ---
-<section data-post-listing aria-label="Find blog entries">
-  <form class="search-panel panel" action="/blog/" role="search"><label class="search-label" for="post-search">Find a little something</label><div class="search-input-wrap"><Icon name="search" size={20} /><input type="search" id="post-search" name="q" placeholder="Search thoughts, stories, anime…" autocomplete="off" /></div><div class="filter-row"><label>Category<select id="category-filter" name="category"><option value="">All categories</option>{categories.map(category => <option value={category}>{category}</option>)}</select></label><label>Tag<select id="tag-filter" name="tag"><option value="">All tags</option>{tags.map(tag => <option value={tag}>{tag}</option>)}</select></label><button type="reset" class="text-button">Clear filters</button></div><noscript><p>Search needs JavaScript. You can read all entries below or browse <a href="/tags/">tags</a> and <a href="/archive/">the archive</a>.</p></noscript></form>
-  <p class="results-count" role="status" aria-live="polite" aria-atomic="true" id="search-status">{entries.length} {entries.length === 1 ? 'entry' : 'entries'} in this little world</p>
+<section data-post-listing data-locale={locale} data-index-url={localePath(locale, 'search-index.json')} data-results-label={t(locale, 'resultsFound')} data-showing-label={t(locale, 'showing')} data-error-message={t(locale, 'searchError')} aria-label={t(locale, 'findEntries')}>
+  <form class="search-panel panel" action={localePath(locale, 'blog')} role="search"><label class="search-label" for="post-search">{t(locale, 'searchLabel')}</label><div class="search-input-wrap"><Icon name="search" size={20} /><input type="search" id="post-search" name="q" placeholder={t(locale, 'searchPlaceholder')} autocomplete="off" /></div><div class="filter-row"><label>{t(locale, 'category')}<select id="category-filter" name="category"><option value="">{t(locale, 'allCategories')}</option>{categories.map(category => <option value={category}>{topicLabel(category, locale)}</option>)}</select></label><label>{t(locale, 'tag')}<select id="tag-filter" name="tag"><option value="">{t(locale, 'allTagOptions')}</option>{tags.map(tag => <option value={tag}>{topicLabel(tag, locale)}</option>)}</select></label><button type="reset" class="text-button">{t(locale, 'clearFilters')}</button></div><noscript><p>{t(locale, 'noScriptSearch')} <a href={localePath(locale, 'tags')}>{t(locale, 'tags')}</a> {t(locale, 'and')} <a href={localePath(locale, 'archive')}>{t(locale, 'archive')}</a>.</p></noscript></form>
+  <p class="results-count" role="status" aria-live="polite" aria-atomic="true" id="search-status">{entries.length} {t(locale, 'worldEntries')}</p>
   <div class="listing-posts">{entries.map(post => <div data-post-id={post.id}><PostCard post={post} /></div>)}</div>
-  <div class="empty-state panel" id="no-results" hidden><Icon name="moon" size={30} /><h2>No little stories found~ <span aria-hidden="true">🌸</span></h2><p>Try another magical word or clear your filters. A different little story might be waiting.</p></div>
-  <button id="load-more" class="button button-dark load-more" hidden>Read a little more <Icon name="arrow" size={16} /></button>
+  <div class="empty-state panel" id="no-results" hidden><Icon name="moon" size={30} /><h2>{t(locale, 'noResultsTitle')} <span aria-hidden="true">🌸</span></h2><p>{t(locale, 'noResultsText')}</p></div>
+  <button id="load-more" class="button button-dark load-more" hidden>{t(locale, 'loadMore')} <Icon name="arrow" size={16} /></button>
 </section>
 <script>
   import { normalizeText, slugify } from '../lib/post-utils';
   async function initializeSearch() {
   type SearchEntry = { id: string; title: string; description: string; tags: string[]; category: string; content: string };
-  const root = document.querySelector('[data-post-listing]');
+  const root = document.querySelector<HTMLElement>('[data-post-listing]');
   if (root) {
     const input = root.querySelector<HTMLInputElement>('#post-search')!;
     const category = root.querySelector<HTMLSelectElement>('#category-filter')!;
@@ -40,7 +42,7 @@ const tags = await allTags();
       cards.forEach(card => { const match = matching.has(card.dataset.postId!); card.hidden = !match || count >= limit; if (match) count++; });
       empty.hidden = count !== 0;
       more.hidden = count <= limit;
-      status.textContent = `${count} ${count === 1 ? 'entry' : 'entries'} found${count > limit ? ` · showing ${limit}` : ''}`;
+      status.textContent = `${count} ${root.dataset.resultsLabel}${count > limit ? ` · ${root.dataset.showingLabel} ${limit}` : ''}`;
       const next = new URLSearchParams();
       if (input.value.trim()) next.set('q', input.value.trim());
       if (category.value) next.set('category', category.value);
@@ -48,7 +50,7 @@ const tags = await allTags();
       history.replaceState(null, '', `${location.pathname}${next.size ? `?${next}` : ''}`);
     };
     try {
-      const response = await fetch('/search-index.json');
+      const response = await fetch(root.dataset.indexUrl!);
       if (!response.ok) throw new Error('Search index unavailable');
       const data: SearchEntry[] = await response.json();
       index = data.map(post => ({ ...post, text: normalizeText([post.title, post.description, post.tags.join(' '), post.category, post.content].join(' ')) }));
@@ -63,7 +65,7 @@ const tags = await allTags();
         cards.find(card => !card.hidden && !visible.has(card))?.querySelector<HTMLAnchorElement>('.post-card h2 a, .post-card h3 a')?.focus();
       });
     } catch {
-      status.textContent = 'Search is taking a little rest. All entries are available below; you can also browse tags and the archive.';
+      status.textContent = root.dataset.errorMessage!;
     }
   }
   }

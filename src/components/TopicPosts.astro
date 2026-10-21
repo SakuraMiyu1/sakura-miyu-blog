@@ -2,7 +2,9 @@
 import PostCard from './PostCard.astro';
 import Icon from './Icon.astro';
 import type { Post } from '../lib/blog';
+import { localeFromPath, localePath, t } from '../lib/i18n';
 interface Props { entries: Post[]; headingLevel?: 'h2' | 'h3'; }
 const { entries, headingLevel = 'h2' } = Astro.props;
+const locale = localeFromPath(Astro.url.pathname);
 ---
-{entries.length ? entries.map(post => <PostCard post={post} headingLevel={headingLevel} />) : <section class="empty-state panel"><Icon name="flower" size={35} /><h2>This corner of my world is still growing. 🎀</h2><p>No little stories here yet~ 🌸 New adventures are coming soon. In the meantime, you're welcome to wander through the diary.</p><a href="/blog/" class="button button-dark">Explore the diary <Icon name="arrow" size={15} /></a></section>}
+{entries.length ? entries.map(post => <PostCard post={post} headingLevel={headingLevel} />) : <section class="empty-state panel"><Icon name="flower" size={35} /><h2>{t(locale, 'noPostsTitle')}</h2><p>{t(locale, 'noPostsDescription')}</p><a href={localePath(locale, 'blog')} class="button button-dark">{t(locale, 'exploreDiary')} <Icon name="arrow" size={15} /></a></section>}

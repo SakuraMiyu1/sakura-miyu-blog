@@ -1,0 +1,23 @@
+---
+import PageLayout from '../layouts/PageLayout.astro';
+import PostListing from '../components/PostListing.astro';
+import TopicPosts from '../components/TopicPosts.astro';
+import { posts, matchesCategory, hasTag } from '../lib/blog';
+import { localeFromPath, topicLabel } from '../lib/i18n';
+import { pageCopy } from '../lib/page-copy';
+interface Props { kind: 'blog' | 'diary' | 'anime' | 'cosplay' | 'gaming' | 'category' | 'tag'; value?: string; }
+const { kind, value } = Astro.props;
+const locale = localeFromPath(Astro.url.pathname);
+const copy = pageCopy[locale];
+const entries = await posts(locale);
+const topic = ['diary', 'anime', 'cosplay', 'gaming'].includes(kind) ? copy.topics[kind as keyof typeof copy.topics] : null;
+const category = value || ({ diary: 'Diary', anime: 'Anime', cosplay: 'Cosplay', gaming: 'Gaming' } as Record<string, string>)[kind];
+const name = topicLabel(value || category || '', locale);
+const title = kind === 'blog' ? copy.pages.blog.title : topic?.title || (kind === 'tag' ? copy.tagTitle.replace('{name}', name) : name);
+const seoTitle = kind === 'tag' && name !== value ? `${title} · ${value}` : title;
+const description = kind === 'blog' ? copy.pages.blog.description : topic?.description || (kind === 'tag' ? copy.tagDescription : copy.categoryDescription).replace('{name}', name);
+const filtered = kind === 'blog' ? entries : kind === 'tag' ? entries.filter(post => hasTag(post, value!)) : entries.filter(post => matchesCategory(post, category));
+---
+<PageLayout title={title} seoTitle={seoTitle} description={description} eyebrow={kind === 'blog' ? copy.pages.blog.eyebrow : kind === 'tag' ? copy.tagEyebrow : copy.categoryEyebrow}>
+  {kind === 'blog' ? <PostListing /> : <TopicPosts entries={filtered} />}
+</PageLayout>

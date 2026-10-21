@@ -1,0 +1,19 @@
+---
+import PageLayout from '../layouts/PageLayout.astro';
+import TopicPosts from '../components/TopicPosts.astro';
+import Icon from '../components/Icon.astro';
+import { posts, matchesCategory } from '../lib/blog';
+import { localeFromPath, t } from '../lib/i18n';
+import { pageCopy } from '../lib/page-copy';
+interface Props { kind: 'about' | 'writing'; }
+const { kind } = Astro.props;
+const locale = localeFromPath(Astro.url.pathname);
+const copy = pageCopy[locale];
+const page = copy.pages[kind];
+const writingEntries = kind === 'writing' ? (await posts(locale)).filter(post => ['Writing', 'Creative Writing', 'Fanfiction'].some(category => matchesCategory(post, category))) : [];
+---
+<PageLayout {...page}>
+  {kind === 'about' ? <article class="panel about-content prose"><img class="about-avatar" src="/images/avatar.webp" width="150" height="150" alt={t(locale, 'imageAlt')} /><h2>{copy.about.heading}</h2>{copy.about.paragraphs.map(paragraph => <p>{paragraph}</p>)}<blockquote>{copy.about.quote}</blockquote></article> : <>
+    <section class="panel writing-intro prose"><Icon name="pen" size={30} /><h2>{copy.writing.heading}</h2><p>{copy.writing.intro}</p><div class="project-card"><span class="eyebrow">{copy.writing.projectEyebrow}</span><h3>{copy.writing.projectTitle}</h3><p>{copy.writing.projectDescription}</p><p class="project-note">{copy.writing.projectNote}</p></div><h3>{copy.writing.ideasTitle}</h3><p>{copy.writing.ideas}</p></section><div class="section-heading"><h2>{copy.writing.entriesTitle}</h2></div><TopicPosts entries={writingEntries} headingLevel="h3" />
+  </>}
+</PageLayout>

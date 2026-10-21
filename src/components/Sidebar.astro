@@ -1,39 +1,41 @@
 ---
 import { posts, tagNames, hasTag, archiveGroups, formatDate, postUrl, tagUrl } from '../lib/blog';
+import { localeFromPath, localePath, t, topicLabel } from '../lib/i18n';
 import Icon from './Icon.astro';
 import Follow from './Follow.astro';
-const entries = await posts();
+const locale = localeFromPath(Astro.url.pathname);
+const entries = await posts(locale);
 const recent = entries.slice(0, 3);
 const tags = tagNames(entries, false).map(tag => ({ tag, count: entries.filter(post => hasTag(post, tag)).length })).sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag)).slice(0, 6);
-const months = archiveGroups(entries).flatMap(year => year.months.map(month => ({ ...month, year: year.year }))).slice(0, 3);
+const months = archiveGroups(entries, locale).flatMap(year => year.months.map(month => ({ ...month, year: year.year }))).slice(0, 3);
 ---
-<aside class="sidebar" aria-label="About Sakura and explore the blog">
+<aside class="sidebar" aria-label={t(locale, 'sidebarLabel')}>
   <section class="profile-card panel">
     <div class="profile-cover" aria-hidden="true"></div>
-    <img class="avatar" src="/images/avatar.webp" alt="Illustrated portrait of Sakura Miyu with pink hair and a black bow" width="112" height="112" loading="lazy" />
-    <span class="eyebrow">THE GIRL BEHIND THE DIARY</span>
-    <h2>Meet Sakura Miyu <span aria-hidden="true">🌸</span></h2>
+    <img class="avatar" src="/images/avatar.webp" alt={t(locale, 'avatarAlt')} width="112" height="112" loading="lazy" />
+    <span class="eyebrow">{t(locale, 'profileEyebrow')}</span>
+    <h2>{t(locale, 'meetSakura')} <span aria-hidden="true">🌸</span></h2>
     <p class="profile-jp" lang="ja">さくらみゆ</p>
-    <p>Hi! I'm Sakura Miyu.<br />Welcome to my little world between reality and dreams.</p>
+    <p>{t(locale, 'profileIntro')}</p>
     <div class="small-divider" aria-hidden="true">✧ ♡ ✧</div>
-    <p class="profile-interests">I love anime, cosplay, gaming, creative writing and all things Gothic Kawaii.</p>
-    <p class="profile-welcome" lang="ja">さくらみゆの小さな世界へようこそ 🎀🖤</p>
-    <a href="/about/" class="button button-outline">A little more about me <Icon name="heart" size={14} /></a>
+    <p class="profile-interests">{t(locale, 'profileInterests')}</p>
+    <p class="profile-welcome">{t(locale, 'eyebrow')} 🎀🖤</p>
+    <a href={localePath(locale, 'about')} class="button button-outline">{t(locale, 'moreAbout')} <Icon name="heart" size={14} /></a>
   </section>
   <section class="panel sidebar-section">
-    <h2><Icon name="book" size={18} /> Latest Diary Entries <span aria-hidden="true">🌸</span></h2>
-    {recent.length ? recent.map(post => <a class="sidebar-post" href={postUrl(post)}><span>{post.data.title}</span><time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time></a>) : <p class="sidebar-empty">My diary is waiting for its first little memory.</p>}
+    <h2><Icon name="book" size={18} /> {t(locale, 'latestEntries')} <span aria-hidden="true">🌸</span></h2>
+    {recent.length ? recent.map(post => <a class="sidebar-post" href={postUrl(post)}><span>{post.data.title}</span><time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate, locale)}</time></a>) : <p class="sidebar-empty">{t(locale, 'emptyDiary')}</p>}
   </section>
   <section class="panel sidebar-section">
-    <h2><Icon name="sparkle" size={17} /> Tags to wander through</h2>
-    {tags.length ? <div class="tags">{tags.map(({ tag, count }) => <a href={tagUrl(tag)}>{tag}<span class="sr-only"> — {count} {count === 1 ? 'entry' : 'entries'}</span></a>)}</div> : <p class="sidebar-empty">Little threads will appear with the first entry.</p>}
-    <a class="text-link sidebar-more" href="/tags/">Explore all tags <Icon name="arrow" size={15} /></a>
+    <h2><Icon name="sparkle" size={17} /> {t(locale, 'wanderTags')}</h2>
+    {tags.length ? <div class="tags">{tags.map(({ tag, count }) => <a href={tagUrl(tag, locale)}>{topicLabel(tag, locale)}<span class="sr-only"> — {count} {t(locale, count === 1 ? 'entry' : 'entries')}</span></a>)}</div> : <p class="sidebar-empty">{t(locale, 'emptyTags')}</p>}
+    <a class="text-link sidebar-more" href={localePath(locale, 'tags')}>{t(locale, 'allTags')} <Icon name="arrow" size={15} /></a>
   </section>
   <section class="panel sidebar-section">
-    <h2><Icon name="moon" size={18} /> The little archive</h2>
-    {months.length ? <ul class="archive-months">{months.map(month => <li><a href={`/archive/#month-${month.key}`}><span>{month.label} {month.year}</span><span>{month.posts.length}</span></a></li>)}</ul> : <p class="sidebar-empty">My diary is waiting for its first little memory.</p>}
-    <a class="text-link sidebar-more" href="/archive/">Open the archive <Icon name="arrow" size={15} /></a>
+    <h2><Icon name="moon" size={18} /> {t(locale, 'littleArchive')}</h2>
+    {months.length ? <ul class="archive-months">{months.map(month => <li><a href={`${localePath(locale, 'archive')}#month-${month.key}`}><span>{month.label} {month.year}</span><span>{month.posts.length}</span></a></li>)}</ul> : <p class="sidebar-empty">{t(locale, 'emptyDiary')}</p>}
+    <a class="text-link sidebar-more" href={localePath(locale, 'archive')}>{t(locale, 'openArchive')} <Icon name="arrow" size={15} /></a>
   </section>
   <Follow />
-  <section class="sidebar-note"><span aria-hidden="true">☾</span><p>Somewhere between<br />a daydream and a diary.</p><span class="small-label">STAY A LITTLE WHILE</span></section>
+  <section class="sidebar-note"><span aria-hidden="true">☾</span><p>{t(locale, 'note')}</p><span class="small-label">{t(locale, 'stay')}</span></section>
 </aside>

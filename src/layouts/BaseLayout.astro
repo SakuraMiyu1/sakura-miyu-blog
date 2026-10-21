@@ -3,12 +3,17 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { site } from '../lib/site';
 import '../styles/global.css';
+import '../styles/language.css';
+import { localeFromPath, localePath, t, type Locale } from '../lib/i18n';
+import { pageAlternates } from '../lib/routes';
 interface Props { title?: string; description?: string; image?: string; article?: boolean; noindex?: boolean; lang?: string; }
-const { title, description = site.description, image = '/images/social.jpg', article = false, noindex = false, lang = 'en' } = Astro.props;
-const pageTitle = title ? `${title} | ${site.title}` : site.title;
-const canonical = new URL(Astro.url.pathname, Astro.site);
+const locale = localeFromPath(Astro.url.pathname);
+const { title, description = t(locale, 'siteDescription'), image = '/images/social.jpg', article = false, noindex = false, lang = locale } = Astro.props;
+const pageTitle = `${title || t(locale, 'home')} | ${site.title} · ${{ uk: 'UA', en: 'EN', ja: 'JP' }[locale]}`;
+const canonical = new URL(Astro.url.pathname === '/' ? '/uk/' : Astro.url.pathname, Astro.site);
+const alternates = await pageAlternates(Astro.url.pathname);
 const socialImage = new URL(image, Astro.site);
-const websiteSchema = { '@context': 'https://schema.org', '@type': 'WebSite', name: site.title, description: site.description, url: new URL('/', Astro.site).href, inLanguage: ['en', 'uk', 'ja'], author: { '@type': 'Person', name: site.author } };
+const websiteSchema = { '@context': 'https://schema.org', '@type': 'WebSite', name: site.title, description, url: new URL(localePath(locale), Astro.site).href, inLanguage: locale, author: { '@type': 'Person', name: site.author } };
 ---
 <!doctype html>
 <html lang={lang}>
@@ -21,26 +26,37 @@ const websiteSchema = { '@context': 'https://schema.org', '@type': 'WebSite', na
     <meta name="theme-color" content="#17121C" />
     <meta name="robots" content={noindex ? 'noindex,follow' : 'index,follow'} />
     <link rel="canonical" href={canonical} />
+    {Object.entries(alternates).map(([language, href]) => <link rel="alternate" hreflang={language} href={new URL(href!, Astro.site)} />)}
     <link rel="icon" type="image/png" sizes="64x64" href="/favicon.png" />
     <link rel="icon" type="image/x-icon" sizes="32x32" href="/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <link rel="alternate" type="application/rss+xml" title={site.title} href="/rss.xml" />
+    <link rel="alternate" type="application/rss+xml" title={site.title} href={localePath(locale, 'rss.xml')} />
     <link rel="sitemap" href="/sitemap.xml" />
     <meta property="og:type" content={article ? 'article' : 'website'} />
     <meta property="og:site_name" content={site.title} />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={{ uk: 'uk_UA', en: 'en_GB', ja: 'ja_JP' }[locale]} />
+    {Object.keys(alternates).filter(language => language !== locale).map(language => <meta property="og:locale:alternate" content={{ uk: 'uk_UA', en: 'en_GB', ja: 'ja_JP' }[language as Locale]} />)}
     <meta property="og:image" content={socialImage} />
-    <meta property="og:image:alt" content="Sakura Miyu's Little World, a pink and black Gothic Kawaii diary" />
+    <meta property="og:image:alt" content={t(locale, 'imageAlt')} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={socialImage} />
-    <meta name="twitter:image:alt" content="Sakura Miyu's Little World, a pink and black Gothic Kawaii diary" />
-    {Astro.url.pathname === '/' && <script type="application/ld+json" set:html={JSON.stringify(websiteSchema).replace(/</g, '\\u003c')} />}
+    <meta name="twitter:image:alt" content={t(locale, 'imageAlt')} />
+    {['/', '/uk/', '/en/', '/ja/'].includes(Astro.url.pathname) && <script type="application/ld+json" set:html={JSON.stringify(websiteSchema).replace(/</g, '\\u003c')} />}
     <script is:inline>document.documentElement.classList.add('js-enabled');</script>
     <slot name="head" />
   </head>
-  <body><a class="skip-link" href="#main">Skip to content</a><Header /><slot /><Footer /></body>
+  <body><a class="skip-link" href="#main">{t(locale, 'skip')}</a><Header alternates={alternates} /><slot /><Footer /></body>
 </html>
+<script>
+  if (location.pathname === '/') {
+    try {
+      const language = localStorage.getItem('sakura-language');
+      if (language && ['uk', 'en', 'ja'].includes(language)) location.replace(`/${language}/${location.search}${location.hash}`);
+    } catch {}
+  }
+</script>

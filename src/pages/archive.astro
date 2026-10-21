@@ -1,18 +1,4 @@
 ---
-import PageLayout from '../layouts/PageLayout.astro';
-import { posts, archiveGroups, formatDate, postUrl } from '../lib/blog';
-const entries = await posts();
-const years = archiveGroups(entries);
+import LegacyRedirect from '../layouts/LegacyRedirect.astro';
 ---
-<PageLayout title="The little archive" description="A collection of days, dreams, and words — kept here to find again." eyebrow="EVERY PAGE HAS A PLACE">
-  <div class="panel archive">
-    {years.map(year => <section class="archive-year" aria-labelledby={`year-${year.year}`}>
-      <h2 id={`year-${year.year}`}>{year.year}</h2>
-      {year.months.map(month => <section class="archive-month" aria-labelledby={`month-${month.key}`}>
-        <h3 id={`month-${month.key}`}>{month.label}</h3>
-        <ul>{month.posts.map(post => <li><a href={postUrl(post)}><time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time><span>{post.data.title}</span><span aria-hidden="true">↗</span></a></li>)}</ul>
-      </section>)}
-    </section>)}
-    {!entries.length && <div class="empty-state"><h2>A little memory is on its way.</h2><p>My diary is waiting for its first little memory.</p><a href="/" class="button button-dark">Return Home ♡</a></div>}
-  </div>
-</PageLayout>
+<LegacyRedirect to="/uk/archive/" />

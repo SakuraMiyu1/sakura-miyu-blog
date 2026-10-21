@@ -1,13 +1,4 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
-import Icon from '../components/Icon.astro';
+import NotFoundPage from '../views/NotFoundPage.astro';
 ---
-<BaseLayout title="A little lost" description="This page has wandered into a daydream. Let's find our way back." noindex>
-  <main id="main" class="shell not-found panel">
-    <div class="lost-decoration" aria-hidden="true"><span>✿</span><Icon name="bow" size={40} /><span>✧</span></div>
-    <span class="eyebrow">404 · SOMEWHERE BETWEEN REALITY & DREAMS</span>
-    <h1>Oopsie~ This little dream got lost! <span aria-hidden="true">🌸</span></h1>
-    <p>Looks like this page wandered somewhere between reality and dreams.</p>
-    <div class="lost-actions"><a href="/" class="button button-dark">Return Home <span aria-hidden="true">🏡</span></a><a href="/blog/" class="button button-outline">Explore the Diary <span aria-hidden="true">📖</span></a></div>
-  </main>
-</BaseLayout>
+<NotFoundPage />

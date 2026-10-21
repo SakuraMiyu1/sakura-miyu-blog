@@ -1,0 +1,10 @@
+---
+import PageLayout from '../layouts/PageLayout.astro';
+import { allTags, posts, tagUrl, hasTag } from '../lib/blog';
+import { localeFromPath, topicLabel, t } from '../lib/i18n';
+import { pageCopy } from '../lib/page-copy';
+const locale = localeFromPath(Astro.url.pathname);
+const tags = await allTags(locale);
+const entries = await posts(locale);
+---
+<PageLayout {...pageCopy[locale].pages.tags}><section class="panel tag-directory">{tags.map(tag => <a href={tagUrl(tag, locale)}><span>{topicLabel(tag, locale)}</span><span>{entries.filter(post => hasTag(post, tag)).length} <span class="sr-only">{t(locale, 'blog')}</span><span aria-hidden="true">↗</span></span></a>)}</section></PageLayout>

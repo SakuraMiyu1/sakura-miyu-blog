@@ -9,6 +9,7 @@ dist/
 !.env.example
 .npm-cache/
 test-results/
+_tmp/
 .qa-dist/
 .DS_Store
 Thumbs.db

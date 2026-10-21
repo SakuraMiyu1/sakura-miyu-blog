@@ -7,7 +7,8 @@ const browser = await chromium.launch({ headless: true, ...(process.env.TEST_BRO
 const reports = [];
 try {
   const page = await browser.newPage({ viewport: { width: 1366, height: 900 }, reducedMotion: 'reduce' });
-  for (const route of ['/', '/blog/', '/blog/welcome/', '/about/', '/writing/', '/archive/', '/tags/', '/categories/gothic-kawaii/', '/404']) {
+  const routes = ['/', ...['uk', 'en', 'ja'].flatMap(locale => ['', 'blog/', 'blog/welcome/', 'about/', 'writing/', 'archive/', 'tags/', 'categories/gothic-kawaii/', '404/'].map(route => `/${locale}/${route}`))];
+  for (const route of routes) {
     await page.goto(origin + route, { waitUntil: 'networkidle' });
     const issues = await page.evaluate(() => {
       const issues = [];

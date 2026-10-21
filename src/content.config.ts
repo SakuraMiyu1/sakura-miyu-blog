@@ -1,13 +1,14 @@
 import { defineCollection } from 'astro:content';
 import { z } from 'astro/zod';
-import { glob } from 'astro/loaders';
+import { localizedBlogLoader } from './lib/localized-loader';
 import { categories } from './lib/post-utils';
 
 const blog = defineCollection({
-  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/blog' }),
+  loader: localizedBlogLoader(),
   schema: z.object({
     title: z.string(),
     description: z.string(),
+    translationKey: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$|^entry:/).optional(),
     slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).optional(),
     seoTitle: z.preprocess(value => value === null || value === '' ? undefined : value, z.string().max(100).optional()),
     seoDescription: z.preprocess(value => value === null || value === '' ? undefined : value, z.string().max(200).optional()),

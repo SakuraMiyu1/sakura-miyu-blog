@@ -20,8 +20,16 @@ CMS.registerEventListener({
   handler: ({ entry }) => {
     let data = entry.get('data');
     const existingSlug = entry.get('slug');
-    if (!entry.get('newRecord') && existingSlug) data = data.set('slug', existingSlug);
+    const newRecord = entry.get('newRecord');
+    const language = data.get('language');
+    const prefixedSlug = existingSlug?.match(/^(uk|en|ja)--(.+)$/);
+    if (!newRecord && prefixedSlug && prefixedSlug[1] !== language) throw new Error('This entry already belongs to another language. Create a separate translation with the same Translation Key instead of changing its language.');
+    if (!newRecord && existingSlug) data = data.set('slug', prefixedSlug ? prefixedSlug[2] : existingSlug);
     if (entry.get('newRecord') && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(data.get('slug') || '')) throw new Error('Enter a unique URL slug using lowercase English letters, numbers and hyphens.');
+    if (!['uk', 'en', 'ja'].includes(language) && !(language === 'multilingual' && !newRecord)) throw new Error('Choose Ukrainian, English or Japanese for a new entry. Create each translation as a separate entry with the same Translation Key. Multilingual is only for existing legacy entries.');
+    const translationKey = data.get('translationKey')?.trim() || '';
+    if ((newRecord || translationKey) && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(translationKey)) throw new Error('Enter a Translation Key using lowercase English letters, numbers and hyphens. Use the same key for translations of the same story.');
+    if (translationKey) data = data.set('translationKey', translationKey);
     if (data.get('image') && !data.get('imageAlt')?.trim()) throw new Error('Please add alternative text for the featured image.');
     if (data.get('image') && !/^\/images\/[a-zA-Z0-9/_.-]+$/.test(data.get('image'))) throw new Error('Use an uploaded image with a filename containing English letters, numbers, hyphens or underscores.');
     if (data.get('tags')?.some(tag => typeof tag !== 'string' || !/[\p{L}\p{N}]/u.test(tag))) throw new Error('Each tag must contain a letter or number.');

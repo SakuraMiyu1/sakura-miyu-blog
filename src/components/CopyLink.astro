@@ -1,11 +1,13 @@
 ---
+import { localeFromPath, t } from '../lib/i18n';
 interface Props { url: string; label: string; message?: string; }
-const { url, label, message = 'Link copied. Thank you for sharing ♡' } = Astro.props;
+const locale = localeFromPath(Astro.url.pathname);
+const { url, label, message = t(locale, 'copied') } = Astro.props;
 ---
-<span class="copy-control" data-copy-url={url} data-copy-message={message}>
+<span class="copy-control" data-copy-url={url} data-copy-message={message} data-copy-fallback={t(locale, 'copyFallback')}>
   <button type="button" class="copy-button">{label}</button>
   <span class="copy-status" role="status" aria-live="polite" aria-atomic="true"></span>
-  <input class="copy-fallback" aria-label={`${label}: select this address to copy`} readonly hidden />
+  <input class="copy-fallback" aria-label={`${label}: ${t(locale, 'copyAddress')}`} readonly hidden />
 </span>
 <script>
   document.querySelectorAll<HTMLElement>('[data-copy-url]').forEach(control => {
@@ -23,7 +25,7 @@ const { url, label, message = 'Link copied. Thank you for sharing ♡' } = Astro
         fallback.hidden = false;
         fallback.focus();
         fallback.select();
-        status.textContent = 'Copy the selected address with Ctrl+C, Cmd+C, or your device’s copy menu.';
+        status.textContent = control.dataset.copyFallback!;
       }
     });
   });

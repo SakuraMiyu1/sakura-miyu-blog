@@ -1,11 +1,14 @@
 ---
 import Icon from './Icon.astro';
+import { localeFromPath, localePath, t } from '../lib/i18n';
+const locale = localeFromPath(Astro.url.pathname);
+const links = [['home', ''], ['diary', 'diary'], ['about', 'about'], ['archive', 'archive'], ['blog', 'blog'], ['tags', 'tags']] as const;
 ---
 <footer class="site-footer shell">
   <div class="footer-flourish" aria-hidden="true">✧ ─── ♡ ─── ✧</div>
-  <a class="footer-brand" href="/">Sakura Miyu's <em>Little World</em></a>
-  <p>A Little World Between Reality &amp; Dreams</p>
-  <p class="footer-note">Made with dreams, sakura petals &amp; a little magic. <span aria-hidden="true">🌸</span></p>
-  <nav aria-label="Footer"><a href="/">Home</a><a href="/diary/">Diary</a><a href="/about/">About</a><a href="/archive/">Archive</a><a href="/blog/">All posts</a><a href="/tags/">Tags</a><a href="/rss.xml"><Icon name="rss" size={13} /> RSS</a></nav>
+  <a class="footer-brand" href={localePath(locale)}>Sakura Miyu's <em>Little World</em></a>
+  <p>{t(locale, 'tagline')}</p>
+  <p class="footer-note">{t(locale, 'footerNote')} <span aria-hidden="true">🌸</span></p>
+  <nav aria-label={t(locale, 'footerNav')}>{links.map(([key, path]) => <a href={localePath(locale, path)}>{t(locale, key)}</a>)}<a href={localePath(locale, 'rss.xml')}><Icon name="rss" size={13} /> RSS</a></nav>
   <small>© {new Date().getFullYear()} Sakura Miyu's Little World</small>
 </footer>

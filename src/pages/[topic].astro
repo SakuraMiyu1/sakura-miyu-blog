@@ -1,15 +1,5 @@
 ---
-import PageLayout from '../layouts/PageLayout.astro';
-import TopicPosts from '../components/TopicPosts.astro';
-import { posts, matchesCategory } from '../lib/blog';
-const topics = {
-  diary: { title: 'Dear little diary', category: 'Diary', description: 'Small thoughts, everyday moments, and the beautiful things I want to remember.' },
-  anime: { title: 'A little anime magic', category: 'Anime', description: 'Characters I love, worlds I return to, and stories that stay with me after the credits.' },
-  cosplay: { title: 'Ribbons, characters & cosplay', category: 'Cosplay', description: 'A little transformation, a little creativity, and the joy of stepping into another world.' },
-  gaming: { title: 'Save points & daydreams', category: 'Gaming', description: 'Virtual adventures, favourite games, and little worlds to get wonderfully lost in.' }
-};
+import LegacyRedirect from '../layouts/LegacyRedirect.astro';
 export function getStaticPaths() { return ['diary', 'anime', 'cosplay', 'gaming'].map(topic => ({ params: { topic } })); }
-const topic = topics[Astro.params.topic as keyof typeof topics];
-const entries = (await posts()).filter(post => matchesCategory(post, topic.category));
 ---
-<PageLayout title={topic.title} description={topic.description} eyebrow={topic.category}><TopicPosts entries={entries} /></PageLayout>
+<LegacyRedirect to={`/uk/${Astro.params.topic}/`} />

@@ -1,12 +1,14 @@
 import type { Post } from './blog';
+import type { Locale } from './i18n';
+import { entrySlug } from './content-languages.ts';
 
 export const categories = ['Diary', 'Anime', 'Cosplay', 'Gaming', 'Writing', 'Gothic Kawaii', 'University', 'Creative Writing', 'Fanfiction'] as const;
 export const normalizeText = (value: string) => value.normalize('NFKC').toLowerCase();
 export const slugify = (value: string) => normalizeText(value).trim().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '');
-export const postUrl = (post: Post) => `/blog/${post.id}/`;
-export const tagUrl = (tag: string) => `/tags/${slugify(tag)}/`;
-export const categoryUrl = (category: string) => `/categories/${slugify(category)}/`;
-export const formatDate = (date: Date) => new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(date);
+export const postUrl = (post: Post) => `/${post.data.language === 'multilingual' ? 'uk' : post.data.language}/blog/${entrySlug(post.id, post.data.slug)}/`;
+export const tagUrl = (tag: string, locale: Locale = 'uk') => `/${locale}/tags/${slugify(tag)}/`;
+export const categoryUrl = (category: string, locale: Locale = 'uk') => `/${locale}/categories/${slugify(category)}/`;
+export const formatDate = (date: Date, locale: Locale = 'en') => new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : locale, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(date);
 export const languageLabel = (language: string) => ({ multilingual: 'UA · EN · JP', uk: 'Українська', en: 'English', ja: '日本語' })[language] || language;
 export const languageCodes = (language: string) => language === 'multilingual' ? ['uk', 'en', 'ja'] : [language];
 export const readingTime = (post: Post) => Math.max(1, Math.ceil((post.body || '').split(/\s+/).length / 200));
@@ -26,14 +28,14 @@ export function tagNames(entries: Post[], includeMain = true) {
 
 export function relatedPosts(post: Post, entries: Post[], limit = 3) {
   const tags = new Set(post.data.tags.map(slugify));
-  const unique = new Map(entries.filter(other => other.id !== post.id).map(other => [other.id, other]));
+  const unique = new Map(entries.filter(other => other.id !== post.id && other.data.language === post.data.language).map(other => [other.id, other]));
   return [...unique.values()].map(other => ({
     post: other,
     score: new Set(other.data.tags.map(slugify).filter(tag => tags.has(tag))).size * 2 + Number(slugify(other.data.category) === slugify(post.data.category))
   })).filter(item => item.score > 0).sort((a, b) => b.score - a.score || comparePosts(a.post, b.post)).slice(0, limit).map(item => item.post);
 }
 
-export function archiveGroups(entries: Post[]) {
+export function archiveGroups(entries: Post[], locale: Locale = 'en') {
   const years = new Map<number, Map<number, Post[]>>();
   for (const post of [...entries].sort(comparePosts)) {
     const year = post.data.pubDate.getUTCFullYear();
@@ -45,7 +47,7 @@ export function archiveGroups(entries: Post[]) {
   }
   return [...years].map(([year, months]) => ({ year, months: [...months].map(([month, posts]) => ({
     key: `${year}-${String(month + 1).padStart(2, '0')}`,
-    label: new Intl.DateTimeFormat('en-GB', { month: 'long', timeZone: 'UTC' }).format(new Date(Date.UTC(year, month))),
+    label: new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : locale, { month: 'long', timeZone: 'UTC' }).format(new Date(Date.UTC(year, month))),
     posts
   })) }));
 }

@@ -1,9 +1,6 @@
 ---
-import PageLayout from '../../layouts/PageLayout.astro';
-import TopicPosts from '../../components/TopicPosts.astro';
-import { posts, categories, slugify, matchesCategory } from '../../lib/blog';
-export function getStaticPaths() { return categories.map(category => ({ params: { category: slugify(category) }, props: { category } })); }
-const { category } = Astro.props;
-const entries = (await posts()).filter(post => matchesCategory(post, category));
+import LegacyRedirect from '../../layouts/LegacyRedirect.astro';
+import { categories, slugify } from '../../lib/blog';
+export function getStaticPaths() { return categories.map(category => ({ params: { category: slugify(category) } })); }
 ---
-<PageLayout title={category} description={`Little moments and stories filed under ${category}.`} eyebrow="EXPLORE A LITTLE INTEREST"><TopicPosts entries={entries} /></PageLayout>
+<LegacyRedirect to={`/uk/categories/${Astro.params.category}/`} />

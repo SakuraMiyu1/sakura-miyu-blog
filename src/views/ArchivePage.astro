@@ -1,0 +1,13 @@
+---
+import PageLayout from '../layouts/PageLayout.astro';
+import { posts, archiveGroups, formatDate, postUrl } from '../lib/blog';
+import { localeFromPath, localePath, t } from '../lib/i18n';
+import { pageCopy } from '../lib/page-copy';
+const locale = localeFromPath(Astro.url.pathname);
+const entries = await posts(locale);
+const years = archiveGroups(entries, locale);
+---
+<PageLayout {...pageCopy[locale].pages.archive}><div class="panel archive">
+  {years.map(year => <section class="archive-year" aria-labelledby={`year-${year.year}`}><h2 id={`year-${year.year}`}>{year.year}</h2>{year.months.map(month => <section class="archive-month" aria-labelledby={`month-${month.key}`}><h3 id={`month-${month.key}`}>{month.label}</h3><ul>{month.posts.map(post => <li><a href={postUrl(post)}><time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate, locale)}</time><span>{post.data.title}</span><span aria-hidden="true">↗</span></a></li>)}</ul></section>)}</section>)}
+  {!entries.length && <div class="empty-state"><h2>{t(locale, 'noPostsTitle')}</h2><p>{t(locale, 'noPostsDescription')}</p><a href={localePath(locale)} class="button button-dark">{t(locale, 'returnHome')} ♡</a></div>}
+</div></PageLayout>

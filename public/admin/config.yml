@@ -41,8 +41,8 @@
       "delete": true,
       "extension": "md",
       "format": "frontmatter",
-      "slug": "{{fields.slug}}",
-      "preview_path": "blog/{{slug}}",
+      "slug": "{{fields.language}}--{{fields.slug}}",
+      "preview_path": "{{fields.language}}/blog/{{fields.slug}}",
       "summary": "{{title}} · {{pubDate}}",
       "sortable_fields": [
         "pubDate",
@@ -66,7 +66,18 @@
             "^[a-z0-9]+(?:-[a-z0-9]+)*$",
             "Use lowercase English letters, numbers and hyphens."
           ],
-          "hint": "For a NEW entry, enter a unique address such as a-quiet-morning. Existing entry URLs are kept unchanged."
+          "hint": "For a NEW entry, enter an address such as a-quiet-morning. Its language is added to the URL; existing addresses stay unchanged."
+        },
+        {
+          "label": "Translation Key",
+          "name": "translationKey",
+          "widget": "string",
+          "required": false,
+          "pattern": [
+            "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "Use lowercase English letters, numbers and hyphens."
+          ],
+          "hint": "Required for new entries. Give translations of the same story the same key, for example a-quiet-morning. Existing entries may leave this empty."
         },
         {
           "label": "Description",
@@ -129,12 +140,8 @@
           "label": "Language",
           "name": "language",
           "widget": "select",
-          "default": "multilingual",
+          "default": "uk",
           "options": [
-            {
-              "label": "🇺🇦 + 🇬🇧 + 🇯🇵 Multilingual",
-              "value": "multilingual"
-            },
             {
               "label": "🇺🇦 Українська",
               "value": "uk"
@@ -146,8 +153,13 @@
             {
               "label": "🇯🇵 日本語",
               "value": "ja"
+            },
+            {
+              "label": "Multilingual (existing legacy entries only)",
+              "value": "multilingual"
             }
-          ]
+          ],
+          "hint": "Write one language per entry. Create a separate entry for each translation and reuse its Translation Key."
         },
         {
           "label": "Featured image",
@@ -215,8 +227,8 @@
             "image",
             "code-block"
           ],
-          "default": "<section lang=\"uk\">\n\n<h2 id=\"ukrainian\">🇺🇦 Українська</h2>\n\n\n\n</section>\n\n---\n\n<section lang=\"en\">\n\n<h2 id=\"english\">🇬🇧 English</h2>\n\n\n\n</section>\n\n---\n\n<section lang=\"ja\">\n\n<h2 id=\"japanese\">🇯🇵 日本語</h2>\n\n\n\n</section>\n",
-          "hint": "Write between the language headings and closing section tags. Keep blank lines around HTML. For one language, select it above and write ordinary Markdown. See the writing guide."
+          "default": "",
+          "hint": "Write this language version in Markdown. Create other language versions as separate entries with the same Translation Key. Existing multilingual entries retain their language sections."
         }
       ]
     }
