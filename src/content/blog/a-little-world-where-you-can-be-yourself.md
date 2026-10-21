@@ -16,7 +16,7 @@ tags:
   - inspiration
   - cosplay
   - diary
-language: multilingual
+language: en
 image: /images/blog/n-.webp
 imageAlt: Sakura Miyu, a pink-haired anime girl in a black-and-pink Gothic
   Lolita outfit, writing in her diary in a cosy room beside a rainy window, with
