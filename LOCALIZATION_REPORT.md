@@ -1,6 +1,8 @@
 # Багатомовність Sakura Miyu’s Little World
 
-Дата перевірки: 21.10.2026. Реалізація підготовлена локально; push і production deployment для цього завдання ще не виконувалися.
+Дата перевірки: 21.10.2026. Реалізацію опубліковано в main: commit 278a2f9. Cloudflare Pages check завершився success; production-перевірка підтвердила роботу трьох мовних версій, 55 HTTP 301, пошуку, RSS, sitemap та увімкненого CMS. Google verification і admin security headers збережені.
+
+Production: https://sakura-miyu-blog.pages.dev/. Deployment: dd6ae8e2-e0f5-4bfd-a471-826689a4d4ac. Цей звіт містить подальше документальне оновлення; код реалізації залишається у commit 278a2f9.
 
 ## Що реалізовано
 
@@ -52,6 +54,7 @@
 | npm run test:cms | Пройдено з production CSP: локальний in-memory backend, створення/збереження/відновлення/публікація QA-чернетки, Blob backup, WebP preview, дати та mobile layout |
 | npm run test:cms:github | Пройдено з реальним Decap frontend і mock GitHub API: OAuth popup handshake, draft branch/PR, upload, reload/update, збереження language/key/slug/filename; 41 перехоплений API-запит |
 | Cloudflare local runtime | Пройдено: 55 справжніх HTTP 301, доступні мовні сторінки та RSS, збережені admin security headers, auth disabled без локальних secrets |
+| Production після push | Пройдено: UA 3 / EN 2 / JP 2 записи; мовні головні, усі статті й RSS HTTP 200; усі 55 редиректів HTTP 301; sitemap/robots HTTP 200; CMS enabled; Cloudflare Pages check success |
 | git diff --check | Пройдено |
 
 Публічні та CMS suites повторно запущені послідовно після нестабільного паралельного запуску. Порожнє поле дати з раннього тесту не відтворилося; serialized date, reload та update перевірено, конфігурацію дат не змінювали. Пошкодження збережених дат не встановлено.
