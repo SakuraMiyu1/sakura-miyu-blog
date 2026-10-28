@@ -34,55 +34,32 @@
   "collections": [
     {
       "name": "blog",
-      "label": "Diary entries",
-      "label_singular": "Diary entry",
-      "folder": "src/content/blog",
+      "label": "Articles",
+      "label_singular": "Article",
+      "folder": "src/content/articles",
       "create": true,
-      "delete": true,
-      "extension": "md",
-      "format": "frontmatter",
-      "slug": "{{fields.language}}--{{fields.slug}}",
-      "preview_path": "{{fields.language}}/blog/{{fields.slug}}",
-      "summary": "{{title}} · {{pubDate}}",
+      "delete": false,
+      "extension": "json",
+      "format": "json",
+      "slug": "{{fields.translationKey}}",
+      "summary": "{{translationKey}} · {{pubDate}}",
       "sortable_fields": [
         "pubDate",
-        "title"
+        "translationKey"
       ],
       "editor": {
         "preview": true
       },
       "fields": [
         {
-          "label": "Title",
-          "name": "title",
-          "widget": "string"
-        },
-        {
-          "label": "URL slug",
-          "name": "slug",
-          "widget": "string",
-          "required": false,
-          "pattern": [
-            "^[a-z0-9]+(?:-[a-z0-9]+)*$",
-            "Use lowercase English letters, numbers and hyphens."
-          ],
-          "hint": "For a NEW entry, enter an address such as a-quiet-morning. Its language is added to the URL; existing addresses stay unchanged."
-        },
-        {
-          "label": "Translation Key",
+          "label": "Article ID",
           "name": "translationKey",
           "widget": "string",
-          "required": false,
           "pattern": [
             "^[a-z0-9]+(?:-[a-z0-9]+)*$",
             "Use lowercase English letters, numbers and hyphens."
           ],
-          "hint": "Required for new entries. Give translations of the same story the same key, for example a-quiet-morning. Existing entries may leave this empty."
-        },
-        {
-          "label": "Description",
-          "name": "description",
-          "widget": "text"
+          "hint": "Shared settings for one article. Choose a unique permanent ID such as a-quiet-morning. It becomes the filename and cannot change after creation."
         },
         {
           "label": "Publication date",
@@ -134,32 +111,8 @@
               ".*[A-Za-z0-9\\u00C0-\\uFFFF].*",
               "Include a letter or number."
             ]
-          }
-        },
-        {
-          "label": "Language",
-          "name": "language",
-          "widget": "select",
-          "default": "uk",
-          "options": [
-            {
-              "label": "🇺🇦 Українська",
-              "value": "uk"
-            },
-            {
-              "label": "🇬🇧 English",
-              "value": "en"
-            },
-            {
-              "label": "🇯🇵 日本語",
-              "value": "ja"
-            },
-            {
-              "label": "Multilingual (existing legacy entries only)",
-              "value": "multilingual"
-            }
-          ],
-          "hint": "Write one language per entry. Create a separate entry for each translation and reuse its Translation Key."
+          },
+          "hint": "Shared tags used by every translation unless that language has its own tag list."
         },
         {
           "label": "Featured image",
@@ -175,13 +128,6 @@
           }
         },
         {
-          "label": "Featured image alt text",
-          "name": "imageAlt",
-          "widget": "string",
-          "required": false,
-          "hint": "Describe the image for readers who cannot see it. Required when an image is selected."
-        },
-        {
           "label": "Feature on the homepage",
           "name": "featured",
           "widget": "boolean",
@@ -192,45 +138,296 @@
           "name": "draft",
           "widget": "boolean",
           "default": false,
-          "hint": "Save draft uses a separate branch. Leave this switch OFF when publishing. ON always hides the entry from the public blog."
+          "hint": "Save keeps the whole article in one workflow branch. ON hides every language even after Publish; OFF publishes only complete translations."
         },
         {
-          "label": "SEO title",
-          "name": "seoTitle",
-          "widget": "string",
+          "label": "Translations",
+          "name": "translations",
+          "widget": "translation-tabs",
           "required": false,
-          "pattern": [
-            "^.{0,100}$",
-            "Up to 100 characters."
-          ],
-          "hint": "Leave empty to use the article title."
-        },
-        {
-          "label": "SEO description",
-          "name": "seoDescription",
-          "widget": "text",
-          "required": false,
-          "pattern": [
-            "^[\\s\\S]{0,200}$",
-            "Up to 200 characters."
-          ],
-          "hint": "Leave empty to use the description."
-        },
-        {
-          "label": "Story",
-          "name": "body",
-          "widget": "markdown",
-          "modes": [
-            "raw"
-          ],
-          "editor_components": [
-            "image",
-            "code-block"
-          ],
-          "default": "",
-          "hint": "Write this language version in Markdown. Create other language versions as separate entries with the same Translation Key. Existing multilingual entries retain their language sections."
+          "collapsed": false,
+          "hint": "One article, one Save and one Publish for all three languages. Partial translations stay saved, but only versions with Title, URL slug, Description and Story appear on the site. No automatic translation.",
+          "fields": [
+            {
+              "label": "Українська (UA)",
+              "name": "uk",
+              "widget": "object",
+              "required": false,
+              "collapsed": false,
+              "fields": [
+                {
+                  "label": "Title",
+                  "name": "title",
+                  "widget": "string",
+                  "required": false
+                },
+                {
+                  "label": "URL slug",
+                  "name": "slug",
+                  "widget": "string",
+                  "required": false,
+                  "pattern": [
+                    "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                    "Use lowercase English letters, numbers and hyphens."
+                  ],
+                  "hint": "Address for this translation, without its language prefix. Keep an existing published slug unchanged."
+                },
+                {
+                  "label": "Description",
+                  "name": "description",
+                  "widget": "text",
+                  "required": false
+                },
+                {
+                  "label": "Featured image alt text",
+                  "name": "imageAlt",
+                  "widget": "string",
+                  "required": false,
+                  "hint": "Describe the shared image in this language. Required when this translation is complete and an image is selected."
+                },
+                {
+                  "label": "SEO title",
+                  "name": "seoTitle",
+                  "widget": "string",
+                  "required": false,
+                  "pattern": [
+                    "^.{0,100}$",
+                    "Up to 100 characters."
+                  ],
+                  "hint": "Leave empty to use the article title."
+                },
+                {
+                  "label": "SEO description",
+                  "name": "seoDescription",
+                  "widget": "text",
+                  "required": false,
+                  "pattern": [
+                    "^[\\s\\S]{0,200}$",
+                    "Up to 200 characters."
+                  ],
+                  "hint": "Leave empty to use the description."
+                },
+                {
+                  "label": "Story",
+                  "name": "body",
+                  "widget": "markdown",
+                  "modes": [
+                    "raw"
+                  ],
+                  "editor_components": [
+                    "image",
+                    "code-block"
+                  ],
+                  "default": "",
+                  "hint": "Write this language version in Markdown. It becomes public only when Title, URL slug, Description and Story are all filled.",
+                  "required": false
+                },
+                {
+                  "label": "Language-specific tags",
+                  "name": "tags",
+                  "widget": "list",
+                  "field": {
+                    "label": "Tag",
+                    "name": "tag",
+                    "widget": "string",
+                    "pattern": [
+                      ".*[A-Za-z0-9\\u00C0-\\uFFFF].*",
+                      "Include a letter or number."
+                    ]
+                  },
+                  "required": false,
+                  "hint": "Leave untouched to inherit shared tags. A saved empty list intentionally hides tags for this language."
+                }
+              ]
+            },
+            {
+              "label": "English (EN)",
+              "name": "en",
+              "widget": "object",
+              "required": false,
+              "collapsed": false,
+              "fields": [
+                {
+                  "label": "Title",
+                  "name": "title",
+                  "widget": "string",
+                  "required": false
+                },
+                {
+                  "label": "URL slug",
+                  "name": "slug",
+                  "widget": "string",
+                  "required": false,
+                  "pattern": [
+                    "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                    "Use lowercase English letters, numbers and hyphens."
+                  ],
+                  "hint": "Address for this translation, without its language prefix. Keep an existing published slug unchanged."
+                },
+                {
+                  "label": "Description",
+                  "name": "description",
+                  "widget": "text",
+                  "required": false
+                },
+                {
+                  "label": "Featured image alt text",
+                  "name": "imageAlt",
+                  "widget": "string",
+                  "required": false,
+                  "hint": "Describe the shared image in this language. Required when this translation is complete and an image is selected."
+                },
+                {
+                  "label": "SEO title",
+                  "name": "seoTitle",
+                  "widget": "string",
+                  "required": false,
+                  "pattern": [
+                    "^.{0,100}$",
+                    "Up to 100 characters."
+                  ],
+                  "hint": "Leave empty to use the article title."
+                },
+                {
+                  "label": "SEO description",
+                  "name": "seoDescription",
+                  "widget": "text",
+                  "required": false,
+                  "pattern": [
+                    "^[\\s\\S]{0,200}$",
+                    "Up to 200 characters."
+                  ],
+                  "hint": "Leave empty to use the description."
+                },
+                {
+                  "label": "Story",
+                  "name": "body",
+                  "widget": "markdown",
+                  "modes": [
+                    "raw"
+                  ],
+                  "editor_components": [
+                    "image",
+                    "code-block"
+                  ],
+                  "default": "",
+                  "hint": "Write this language version in Markdown. It becomes public only when Title, URL slug, Description and Story are all filled.",
+                  "required": false
+                },
+                {
+                  "label": "Language-specific tags",
+                  "name": "tags",
+                  "widget": "list",
+                  "field": {
+                    "label": "Tag",
+                    "name": "tag",
+                    "widget": "string",
+                    "pattern": [
+                      ".*[A-Za-z0-9\\u00C0-\\uFFFF].*",
+                      "Include a letter or number."
+                    ]
+                  },
+                  "required": false,
+                  "hint": "Leave untouched to inherit shared tags. A saved empty list intentionally hides tags for this language."
+                }
+              ]
+            },
+            {
+              "label": "日本語 (JP)",
+              "name": "ja",
+              "widget": "object",
+              "required": false,
+              "collapsed": false,
+              "fields": [
+                {
+                  "label": "Title",
+                  "name": "title",
+                  "widget": "string",
+                  "required": false
+                },
+                {
+                  "label": "URL slug",
+                  "name": "slug",
+                  "widget": "string",
+                  "required": false,
+                  "pattern": [
+                    "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                    "Use lowercase English letters, numbers and hyphens."
+                  ],
+                  "hint": "Address for this translation, without its language prefix. Keep an existing published slug unchanged."
+                },
+                {
+                  "label": "Description",
+                  "name": "description",
+                  "widget": "text",
+                  "required": false
+                },
+                {
+                  "label": "Featured image alt text",
+                  "name": "imageAlt",
+                  "widget": "string",
+                  "required": false,
+                  "hint": "Describe the shared image in this language. Required when this translation is complete and an image is selected."
+                },
+                {
+                  "label": "SEO title",
+                  "name": "seoTitle",
+                  "widget": "string",
+                  "required": false,
+                  "pattern": [
+                    "^.{0,100}$",
+                    "Up to 100 characters."
+                  ],
+                  "hint": "Leave empty to use the article title."
+                },
+                {
+                  "label": "SEO description",
+                  "name": "seoDescription",
+                  "widget": "text",
+                  "required": false,
+                  "pattern": [
+                    "^[\\s\\S]{0,200}$",
+                    "Up to 200 characters."
+                  ],
+                  "hint": "Leave empty to use the description."
+                },
+                {
+                  "label": "Story",
+                  "name": "body",
+                  "widget": "markdown",
+                  "modes": [
+                    "raw"
+                  ],
+                  "editor_components": [
+                    "image",
+                    "code-block"
+                  ],
+                  "default": "",
+                  "hint": "Write this language version in Markdown. It becomes public only when Title, URL slug, Description and Story are all filled.",
+                  "required": false
+                },
+                {
+                  "label": "Language-specific tags",
+                  "name": "tags",
+                  "widget": "list",
+                  "field": {
+                    "label": "Tag",
+                    "name": "tag",
+                    "widget": "string",
+                    "pattern": [
+                      ".*[A-Za-z0-9\\u00C0-\\uFFFF].*",
+                      "Include a letter or number."
+                    ]
+                  },
+                  "required": false,
+                  "hint": "Leave untouched to inherit shared tags. A saved empty list intentionally hides tags for this language."
+                }
+              ]
+            }
+          ]
         }
-      ]
+      ],
+      "identifier_field": "translationKey"
     }
   ]
 }

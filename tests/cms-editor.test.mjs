@@ -5,55 +5,123 @@ import { runInNewContext } from 'node:vm';
 
 const source = await readFile('public/admin/editor.js', 'utf8');
 const handlers = {};
-const CMS = { registerPreviewStyle() {}, registerPreviewTemplate() {}, registerEventListener: event => { handlers[event.name] = event.handler; } };
-runInNewContext(source, { window: { CMS, h() {} } });
+const widgets = {};
+let preview;
+const h = (type, props, ...children) => ({ type, props: props || {}, children });
 class Data {
   constructor(value) { this.value = value; }
-  get(key) { return this.value[key]; }
+  get(key, fallback) { return this.value[key] === undefined ? fallback : this.value[key]; }
   set(key, value) { return new Data({ ...this.value, [key]: value }); }
 }
+class ObjectControl {
+  constructor(props) { this.props = props; this.state = { collapsed: false }; this.renderFields = fields => fields.map(field => this.controlFor(field, field.get('name'))); }
+  setState(value, callback) { this.state = { ...this.state, ...value }; callback?.(); }
+  controlFor(field, key) { return h('control', { key, name: field.get('name') }); }
+  render() { return h('object', {}, this.renderFields(this.props.field.get('fields'))); }
+  focus(path) { this.focusedPath = path; }
+}
+const baseWidget = { control: ObjectControl, preview() {}, schema: { properties: { collapsed: { type: 'boolean' } } } };
+const CMS = {
+  getWidget: name => name === 'object' ? baseWidget : widgets[name],
+  registerWidget: widget => { widgets[widget.name] = widget; },
+  registerPreviewStyle() {},
+  registerPreviewTemplate: (_name, callback) => { preview = callback; },
+  registerEventListener: event => { handlers[event.name] = event.handler; }
+};
+runInNewContext(source, { window: { CMS, h } });
 const entry = (data, { slug, newRecord = true } = {}) => ({ get: key => ({ data: new Data(data), slug, newRecord })[key] });
-const newEntry = data => entry({ slug: 'a-dream', language: 'uk', translationKey: 'a-dream', ...data });
+const complete = overrides => ({ title: 'A dream', slug: 'a-dream', description: 'A diary thought', body: 'A little story.', ...overrides });
+const article = overrides => ({ translationKey: 'a-dream', pubDate: '2026-10-17', updatedDate: '', category: 'Diary', tags: ['Anime'], featured: false, draft: false, translations: { uk: complete() }, ...overrides });
+const save = (data, options) => handlers.preSave({ entry: entry(data, options) });
 
-test('Editor validates new addresses and preserves existing entry filenames', () => {
-  assert.throws(() => handlers.preSave({ entry: entry({ slug: '' }) }), /unique URL slug/);
-  assert.throws(() => handlers.preSave({ entry: entry({ slug: '../escape' }) }), /unique URL slug/);
-  const saved = handlers.preSave({ entry: entry({ slug: 'changed-url', language: 'en', body: 'A thought' }, { slug: 'welcome', newRecord: false }) });
-  assert.equal(saved.get('slug'), 'welcome');
+test('One article retains all language versions and shared settings through a JSON roundtrip', () => {
+  const input = article({ image: '/images/blog/ribbon.webp', featured: true, translations: { uk: complete({ title: 'Мрія', body: 'Я зберегла маленьку мрію.', imageAlt: 'Рожева стрічка' }), en: complete({ imageAlt: 'A pink ribbon', tags: [] }), ja: complete({ title: '小さな夢', body: '日記の小さな物語。', imageAlt: 'ピンクのリボン', tags: ['物語'] }) } });
+  const saved = save(input).value;
+  const reloaded = JSON.parse(JSON.stringify(saved));
+  assert.deepEqual(save(reloaded, { slug: 'a-dream', newRecord: false }).value, input);
+  assert.equal(Object.hasOwn(reloaded.translations.uk, 'tags'), false, 'Untouched locale tags inherit the shared list');
+  assert.deepEqual(reloaded.translations.en.tags, [], 'Explicit empty locale tags are preserved');
+  assert.deepEqual(reloaded.translations.ja.tags, ['物語']);
+  assert.deepEqual(reloaded.tags, ['Anime']);
 });
 
-test('Editor requires image descriptions and preserves multilingual section anchors', () => {
-  assert.throws(() => handlers.preSave({ entry: newEntry({ image: '/images/test.webp' }) }), /alternative text/);
-  assert.throws(() => handlers.preSave({ entry: newEntry({ image: 'https://example.com/image.webp', imageAlt: 'A blossom' }) }), /uploaded image/);
-  assert.throws(() => handlers.preSave({ entry: newEntry({ tags: ['🌸'] }) }), /letter or number/);
-  assert.throws(() => handlers.preSave({ entry: entry({ language: 'multilingual', body: 'No language sections' }, { slug: 'welcome', newRecord: false }) }), /three language sections/);
-  const body = '<section lang="uk"><h2 id="ukrainian">Українська</h2></section><section lang="en"><h2 id="english">English</h2></section><section lang="ja"><h2 id="japanese">日本語</h2></section>';
-  const saved = handlers.preSave({ entry: entry({ language: 'multilingual', body }, { slug: 'welcome', newRecord: false }) });
-  assert.equal(saved.get('body'), body);
-  assert.equal(saved.get('translationKey'), undefined);
+test('Article ID is required, ASCII and immutable after its filename is created', () => {
+  for (const translationKey of ['', undefined, '../escape', 'UPPERCASE', 'Українська']) assert.throws(() => save(article({ translationKey })), /Article ID/);
+  assert.throws(() => save(article({ translationKey: 'renamed' }), { slug: 'a-dream', newRecord: false }), /cannot change/);
+  assert.equal(save(article(), { slug: 'a-dream', newRecord: false }).get('translationKey'), 'a-dream');
 });
 
-test('New entries require one supported language and a reusable ASCII Translation Key', () => {
-  for (const language of ['uk', 'en', 'ja']) {
-    const saved = handlers.preSave({ entry: newEntry({ language, body: 'A story', translationKey: 'shared-story' }) });
-    assert.equal(saved.get('language'), language);
-    assert.equal(saved.get('translationKey'), 'shared-story');
-    assert.equal(saved.get('body'), 'A story');
-  }
-  for (const translationKey of ['', undefined, '../story', 'Українська', 'UPPERCASE']) {
-    assert.throws(() => handlers.preSave({ entry: newEntry({ translationKey }) }), /Translation Key/);
-  }
-  for (const language of [undefined, 'multilingual', 'jp', 'de']) {
-    assert.throws(() => handlers.preSave({ entry: newEntry({ language }) }), /Choose Ukrainian, English or Japanese/);
-  }
+test('Partial and empty translations stay saved without requiring a primary language', () => {
+  const translations = { uk: {}, en: { title: 'Still writing', body: 'An unfinished draft' }, ja: {} };
+  assert.deepEqual(save(article({ translations })).value.translations, translations);
+  assert.deepEqual(save(article({ translations: {} })).value.translations, {});
+  for (const locale of ['uk', 'en', 'ja']) assert.deepEqual(save(article({ translations: { [locale]: complete() } })).value.translations, { [locale]: complete() });
 });
 
-test('Editing a prefixed entry keeps its filename identity and normalized URL slug', () => {
-  const saved = handlers.preSave({ entry: entry({ slug: 'renamed', language: 'en', translationKey: 'shared-story' }, { slug: 'en--a-dream', newRecord: false }) });
-  assert.equal(saved.get('slug'), 'a-dream');
-  assert.equal(saved.get('translationKey'), 'shared-story');
-  assert.throws(() => handlers.preSave({ entry: entry({ language: 'ja' }, { slug: 'en--a-dream', newRecord: false }) }), /separate translation/);
-  const legacy = handlers.preSave({ entry: entry({ slug: 'new-url', language: 'ja', body: '物語' }, { slug: 'old-story', newRecord: false }) });
-  assert.equal(legacy.get('slug'), 'old-story');
-  assert.equal(legacy.get('translationKey'), undefined);
+test('Only complete translations require alt text when the shared image is set', () => {
+  assert.throws(() => save(article({ image: '/images/test.webp' })), /Українська.*alternative text/);
+  assert.doesNotThrow(() => save(article({ image: '/images/test.webp', translations: { en: { title: 'Work in progress' } } })));
+  assert.doesNotThrow(() => save(article({ image: '/images/test.webp', translations: { en: complete({ imageAlt: 'A blossom' }) } })));
+  assert.throws(() => save(article({ image: 'https://example.com/test.webp' })), /uploaded image/);
+});
+
+test('Dates, localized slugs and tags reject invalid values without deleting partial content', () => {
+  for (const pubDate of ['', '2025-02-29', '17/10/2026', '2026-13-01', 20261017]) assert.throws(() => save(article({ pubDate })), /Publication date/);
+  assert.doesNotThrow(() => save(article({ pubDate: '2024-02-29', updatedDate: '2026-10-18T00:00:00.000Z' })));
+  assert.throws(() => save(article({ updatedDate: '2026-02-30' })), /Updated date/);
+  assert.throws(() => save(article({ translations: { en: { slug: '../escape' } } })), /URL slug/);
+  assert.throws(() => save(article({ tags: ['🌸'] })), /Shared tags/);
+  assert.throws(() => save(article({ translations: { ja: { tags: ['🌸'] } } })), /日本語.*tag/);
+  assert.throws(() => save(article({ translations: { en: { body: 42 } } })), /body must be text/);
+  assert.throws(() => save(article({ translations: { en: { seoTitle: 'x'.repeat(101) } } })), /SEO title/);
+});
+
+test('Tabs keep all three language controls mounted and support keyboard selection and error focus', () => {
+  const widget = widgets['translation-tabs'];
+  assert.equal(widget.schema, baseWidget.schema);
+  assert.equal(widget.allowMapValue, true);
+  const control = new widget.controlComponent({ forID: 'translations-field-1', field: new Data({ fields: ['uk', 'en', 'ja'].map(name => new Data({ name })) }) });
+  let panels = control.renderFields(control.props.field.get('fields'));
+  assert.equal(panels.length, 3);
+  assert.equal(panels.filter(panel => !panel.props.hidden).length, 1);
+  assert.equal(panels[0].props.role, 'tabpanel');
+  assert.equal(panels[0].children[0].props.name, 'uk');
+  let focused = false;
+  let prevented = false;
+  control.tabButtons.en = { focus: () => { focused = true; } };
+  control.handleTabKey({ key: 'ArrowRight', preventDefault: () => { prevented = true; } }, 'uk');
+  assert.equal(control.state.activeLocale, 'en');
+  assert.equal(focused, true);
+  assert.equal(prevented, true);
+  panels = control.renderFields(control.props.field.get('fields'));
+  assert.equal(panels.length, 3);
+  assert.equal(panels[0].props.hidden, true);
+  assert.equal(panels[1].props.hidden, false);
+  control.handleTabKey({ key: 'End', preventDefault() {} }, 'en');
+  assert.equal(control.state.activeLocale, 'ja');
+  control.handleTabKey({ key: 'Home', preventDefault() {} }, 'ja');
+  assert.equal(control.state.activeLocale, 'uk');
+  control.handleTabKey({ key: 'ArrowLeft', preventDefault() {} }, 'uk');
+  assert.equal(control.state.activeLocale, 'ja');
+  control.focus('en.body');
+  assert.equal(control.state.activeLocale, 'en');
+  assert.equal(control.focusedPath, 'en.body');
+  const rendered = control.render();
+  const buttons = rendered.children[0].children;
+  assert.equal(buttons.filter(button => button.props.tabIndex === 0).length, 1);
+  assert.equal(buttons[1].props['aria-controls'], 'translations-field-1-panel-en');
+});
+
+test('Preview shows complete language versions and resolves nested body widgets and shared media', () => {
+  const localizedFields = ['uk', 'en', 'ja'].map(name => new Data({ name, fields: [new Data({ name: 'body' })] }));
+  const input = article({ image: '/images/test.webp', translations: { en: complete({ imageAlt: 'A blossom' }), ja: complete({ title: 'Not complete yet', body: ' \n ' }) } });
+  const bodies = [];
+  const rendered = preview({ entry: entry(input), fields: [new Data({ name: 'translations', fields: localizedFields })], widgetFor: (name, _fields, value) => { bodies.push({ name, value }); return h('markdown', {}, value.body); }, getAsset: () => 'blob:test-image' });
+  const section = rendered.children.find(child => child?.type === 'section');
+  assert.equal(section.props.lang, 'en');
+  assert.equal(rendered.children.filter(child => child?.type === 'section').length, 1);
+  assert.equal(bodies.length, 1);
+  assert.equal(bodies[0].name, 'body');
+  assert.equal(bodies[0].value.body, 'A little story.');
+  assert.equal(section.children.find(child => child?.type === 'img').props.src, 'blob:test-image');
 });

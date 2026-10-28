@@ -1,0 +1,41 @@
+{
+  "translationKey": "welcome",
+  "pubDate": "2026-10-16",
+  "updatedDate": "",
+  "category": "Diary",
+  "image": "/images/welcome.webp",
+  "featured": true,
+  "draft": false,
+  "tags": [
+    "Diary",
+    "Anime",
+    "Cosplay",
+    "Gaming",
+    "Writing",
+    "University",
+    "Fanfiction"
+  ],
+  "translations": {
+    "uk": {
+      "title": "🌸 Вітаю у Sakura Miyu's Little World 🖤",
+      "slug": "welcome",
+      "description": "Моє маленьке знайомство: улюблені світи, творчість і думки, що розквітають у щоденнику.",
+      "imageAlt": "Сакура Мію під рожевим цвітом сакури у місячному світі Gothic Kawaii",
+      "body": "Привіт! Я Сакура Мію — і я дуже рада, що ти знайшла або знайшов цей маленький куточок. 🌸\n\nЯ давно мріяла про власне місце, де можна зберігати думки, розповідати про улюблені світи й залишати трохи краси поміж звичайними днями. Так з'явився **Sakura Miyu's Little World** — мій маленький світ між реальністю та мріями.\n\nЯ люблю аніме, косплей, відеоігри, японську культуру й Gothic Kawaii: ніжний рожевий поруч із чорними стрічками, мереживом і маленькими зірками. Але найбільше люблю відчуття, коли історія торкається серця й не відпускає навіть після фінальних титрів.\n\nПісля аніме чи фільму я часто замислююся: а що було б, якби героїня зробила інший вибір? Якби хтось сказав потрібні слова раніше? Іноді ці думки залишаються в нотатнику, а іноді стають початком власної історії.\n\nЗараз я працюю над альтернативною історією, натхненною Луїзою із *Zero no Tsukaima / The Familiar of Zero*. Це мій особистий фанфік — спроба уявити для знайомої героїні іншу дорогу, написану власними словами.\n\nА ще я навчаюся на Computer Science в університеті. Мені подобається, що поруч можуть існувати код і творчість: удень розбиратися, як щось працює, а потім вигадувати світи, яких поки не існує.\n\nТут я хочу ділитися повсякденним життям, косплеєм, іграми, історіями й невеличкими думками. Без потреби робити кожен день особливим — іноді достатньо просто помітити щось красиве.\n\nСподіваюся зустріти тут людей зі схожими інтересами. Можливо, ми любимо ті самі аніме, повертаємося до тих самих ігор або теж вигадуємо інші закінчення улюблених історій.\n\nДякую, що завітала або завітав. Влаштовуйся зручніше — я залишила тут трохи місця для тебе. 🎀🖤"
+    },
+    "en": {
+      "title": "🌸 Welcome to Sakura Miyu's Little World 🖤",
+      "slug": "welcome",
+      "description": "Come meet the girl behind the diary, her favourite worlds, and the stories waiting to bloom.",
+      "imageAlt": "Sakura Miyu beneath pink sakura blossoms in a moonlit Gothic Kawaii world",
+      "body": "Hi! I'm Sakura Miyu, and I'm so glad you found this little corner. 🌸\n\nI've been dreaming of a place of my own: somewhere to keep small thoughts, talk about the worlds I love, and leave a little beauty between ordinary days. That's how **Sakura Miyu's Little World** began — my little world between reality and dreams.\n\nI love anime, cosplay, video games, Japanese culture, and Gothic Kawaii: soft pink beside black ribbons, lace, and little stars. Most of all, I love the feeling of a story staying with me long after the final credits.\n\nAfter an anime or a film, I often wonder: what if the heroine had made a different choice? What if someone had found the right words a little sooner? Sometimes those thoughts stay in my notebook. Sometimes they become the beginning of a story of my own.\n\nAt the moment, I'm working on an alternative story inspired by Louise from *Zero no Tsukaima / The Familiar of Zero*. It's personal fanfiction — a different path for a familiar character, written in my own words.\n\nI'm also studying Computer Science at university. I like having room for both code and creativity: learning how things work, then imagining worlds that don't exist yet.\n\nHere, I hope to share everyday life, cosplay, games, stories, and small thoughts. Every day doesn't need to be extraordinary. Sometimes it's enough to notice one beautiful little thing.\n\nI hope to meet people with similar interests. Maybe we love the same anime, return to the same games, or both imagine different endings to our favourite stories.\n\nThank you for stopping by. Make yourself comfortable — I've left a little space here for you. 🎀🖤"
+    },
+    "ja": {
+      "title": "🌸 Sakura Miyu's Little Worldへようこそ 🖤",
+      "slug": "welcome",
+      "description": "日記を書いている私のこと、大好きな世界、そしてこれから咲く物語を少しだけ紹介します。",
+      "imageAlt": "月明かりのゴシックかわいい世界で、ピンクの桜の下にいるさくらみゆ",
+      "body": "はじめまして！さくらみゆです。この小さな場所を見つけてくれて、とてもうれしいです。🌸\n\n小さな気持ちを残したり、大好きな世界のことを話したり、何気ない毎日のあいだに少しだけきれいなものを置いておける場所。そんな自分だけの場所を、ずっと作りたいと思っていました。そうして生まれたのが、**Sakura Miyu's Little World**。現実と夢のあいだにある、私の小さな世界です。\n\nアニメ、コスプレ、ゲーム、日本の文化、そしてゴシックかわいいファッションが大好きです。やさしいピンクに黒いリボン、レース、小さな星。何よりも、エンドロールが終わったあとも心に残る物語が好きです。\n\nアニメや映画を見たあと、よく考えます。もしあの子が別の選択をしていたら？もし誰かがもう少し早く、必要な言葉を伝えていたら？そんな思いつきは、ノートの中に残ることもあれば、自分の物語の始まりになることもあります。\n\n今は、*ゼロの使い魔 / The Familiar of Zero* のルイズに着想を得た、別の物語を書いています。おなじみのキャラクターが違う道を歩むとしたら、という個人的な二次創作です。原作の文章を使わず、自分の言葉で書いています。\n\nそれから、大学でコンピューターサイエンスを勉強しています。仕組みを学ぶことと、まだ存在しない世界を想像すること。コードも創作も、どちらも大切にしていきたいです。\n\nここでは、日々のこと、コスプレ、ゲーム、物語、そして小さな気持ちを綴っていくつもりです。毎日が特別でなくても、ひとつの小さなきれいなものに気づけたら、それで十分な日もありますよね。\n\n同じようなものが好きな人たちに出会えたらうれしいです。同じアニメが好きだったり、同じゲームに何度も戻ったり、好きな物語の別の結末を想像していたりするかもしれません。\n\n遊びに来てくれて、ありがとう。どうぞ、ゆっくりしていってくださいね。あなたのための小さな場所も、ここにあります。🎀🖤"
+    }
+  }
+}

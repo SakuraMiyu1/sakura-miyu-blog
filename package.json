@@ -11,6 +11,7 @@
     "check": "astro check",
     "test": "node --test tests/*.test.mjs",
     "test:content": "node scripts/test-content-fixtures.mjs",
+    "test:unified": "node scripts/test-unified-content.mjs",
     "test:cms": "node scripts/test-cms-browser.mjs",
     "test:cms:github": "node scripts/test-cms-github.mjs",
     "test:a11y": "node scripts/audit-accessibility.mjs",

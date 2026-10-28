@@ -3,11 +3,32 @@ import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import assert from 'node:assert/strict';
 
+const languageNames = { uk: '🇺🇦 Українська (UA)', en: '🇬🇧 English (EN)', ja: '🇯🇵 日本語 (JP)' };
+const translations = {
+  uk: { title: 'Чернетка GitHub', slug: 'qa-github-draft', description: 'Українська історія з маленькою мрією.', imageAlt: 'Рожева сакура', seoTitle: 'Чернетка GitHub — Sakura Miyu', seoDescription: 'Українська перевірка чернетки.', body: 'Я зберегла маленьку мрію у щоденнику.' },
+  en: { title: 'GitHub workflow fixture', slug: 'qa-github-draft', description: 'A draft image and date regression check.', imageAlt: 'A sakura blossom', seoTitle: 'GitHub draft — Sakura Miyu', seoDescription: 'An English draft regression check.', body: 'An English diary draft with a sakura blossom.' },
+  ja: { title: 'GitHubの下書き', slug: 'qa-github-draft', description: '小さな夢についての下書き。', imageAlt: '桜の花', seoTitle: 'GitHubの下書き — Sakura Miyu', seoDescription: '日本語の下書きの確認。', body: '小さな夢を日記に残します。' },
+};
+const selectLanguage = async (page, locale) => {
+  await page.getByRole('tab', { name: languageNames[locale], exact: true }).click();
+  return page.getByRole('tabpanel');
+};
+const assertDraft = (draft, updated = false) => {
+  assert.deepEqual(Object.keys(draft.translations).sort(), ['en', 'ja', 'uk']);
+  for (const [locale, values] of Object.entries(translations)) {
+    for (const [field, value] of Object.entries(values)) assert.equal(draft.translations[locale][field], updated && locale === 'en' && field === 'description' ? 'Updated GitHub draft.' : value, `${locale}.${field}`);
+    assert.equal(Object.hasOwn(draft.translations[locale], 'tags'), false, 'Inherited tags stay absent');
+  }
+  assert.equal(draft.translationKey, 'qa-github-draft');
+  assert.equal(Object.hasOwn(draft, 'language'), false);
+  assert.equal(Object.hasOwn(draft, 'title'), false);
+  assert.equal(Object.hasOwn(draft, 'body'), false);
+};
+
 const origin = process.env.TEST_URL || 'http://127.0.0.1:4321';
 const config = JSON.parse(await readFile('public/admin/config.yml', 'utf8'));
 config.backend.base_url = origin;
 config.logo_url = origin + '/favicon.png';
-config.collections[0].fields.find(field => field.name === 'language').default = 'en';
 const csp = (await readFile('public/_headers', 'utf8')).match(/Content-Security-Policy: ([^\r\n]+)/)[1];
 const browser = await chromium.launch({ headless: true, ...(process.env.TEST_BROWSER_CHANNEL ? { channel: process.env.TEST_BROWSER_CHANNEL } : {}) });
 const blobs = new Map();
@@ -22,8 +43,9 @@ const putBlob = buffer => {
   blobs.set(sha, Buffer.from(buffer));
   return sha;
 };
-const welcome = await readFile('src/content/blog/welcome.md');
-const mainFiles = { 'src/content/blog/welcome.md': putBlob(welcome) };
+const welcome = await readFile('src/content/articles/welcome.json');
+const legacyWelcome = await readFile('src/content/blog/welcome.md');
+const mainFiles = { 'src/content/articles/welcome.json': putBlob(welcome) };
 const mainSha = 'a'.repeat(40);
 commits.set(mainSha, { sha: mainSha, files: mainFiles, parents: [], commit: { message: 'Fixture main' } });
 branches.set('main', mainSha);
@@ -93,7 +115,7 @@ try {
       const history = [];
       let commit = tip;
       while (commit && commit.sha !== from) { history.unshift(commit); commit = commits.get(commit.parents[0]?.sha); }
-      result = { base_commit: base, commits: history, files: Object.entries(tip.files).filter(([name, sha]) => sha !== base.files[name]).map(([filename, sha]) => ({ filename, sha, status: base.files[filename] ? 'modified' : 'added', ...(filename.endsWith('.md') ? { patch: 'fixture markdown diff' } : {}) })) };
+      result = { base_commit: base, commits: history, files: Object.entries(tip.files).filter(([name, sha]) => sha !== base.files[name]).map(([filename, sha]) => ({ filename, sha, status: base.files[filename] ? 'modified' : 'added', ...(filename.endsWith('.json') ? { patch: 'fixture article diff' } : {}) })) };
     } else if (path === '/pulls' && method === 'POST') {
       result = { number: pullRequests.length + 1, state: 'open', labels: [], updated_at: '2026-10-17T12:00:00Z', user: { login: 'SakuraMiyu1' }, head: { ref: body.head.replace('SakuraMiyu1:', ''), sha: head(body.head) }, base: { ref: 'main', sha: mainSha } };
       pullRequests.push(result);
@@ -111,7 +133,8 @@ try {
     await route.fulfill({ json: result });
   });
   const page = await context.newPage();
-  page.setDefaultTimeout(10000);
+  page.setDefaultTimeout(30000);
+  page.setDefaultNavigationTimeout(60000);
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => {
     if (/persistLocalDraftBackup|Failed to persist entry|Content Security Policy/.test(message.text())) errors.push(message.text());
@@ -133,55 +156,71 @@ try {
   const closed = popup.waitForEvent('close');
   await popup.evaluate(origin => opener.postMessage('authorization:github:success:{"token":"QA_FAKE_TOKEN","provider":"github"}', origin), origin);
   await closed;
-  await page.getByRole('link', { name: /Welcome to Sakura/ }).waitFor();
+  await page.getByRole('link').filter({ hasText: /welcome/ }).first().waitFor();
   assert.ok(!errors.some(error => /indexOf/.test(error)));
-  await page.getByRole('link', { name: /Diary entry/ }).click();
-  await page.getByRole('textbox', { name: 'Title', exact: true }).fill('GitHub workflow fixture');
-  await page.getByRole('textbox', { name: /^URL slug/ }).fill('qa-github-draft');
-  await page.getByRole('textbox', { name: /^Translation Key/ }).fill('qa-github-draft');
-  await page.getByRole('textbox', { name: 'Description', exact: true }).fill('A draft image and date regression check.');
+  await page.getByRole('link', { name: /Article$/ }).click();
+  await page.getByRole('textbox', { name: /^Article ID/ }).fill('qa-github-draft');
   await page.getByLabel('Publication date', { exact: true }).fill('2026-10-17');
-  await page.locator('[contenteditable=true]').first().fill('An English diary draft with a sakura blossom.');
+  for (const [locale, values] of Object.entries(translations)) {
+    const panel = await selectLanguage(page, locale);
+    for (const [field, label] of Object.entries({ title: 'Title', slug: 'URL slug', description: 'Description', imageAlt: 'Featured image alt text', seoTitle: 'SEO title', seoDescription: 'SEO description' })) {
+      await panel.getByRole('textbox', { name: new RegExp('^' + label + '(?: |$)') }).fill(values[field]);
+    }
+    await panel.locator('[contenteditable=true]').first().fill(values.body);
+  }
+  await selectLanguage(page, 'uk');
   await page.getByRole('button', { name: 'Choose an image', exact: true }).click();
   await page.locator('input[type=file]').setInputFiles({ name: 'qa-github.png', mimeType: 'image/png', buffer: await readFile('public/favicon.png') });
   await page.getByRole('button', { name: /choose selected/i }).click();
-  await page.getByRole('textbox', { name: /^Featured image alt text/ }).fill('A sakura blossom');
   await expect.poll(() => page.locator('img[role=presentation]').evaluate(img => img.naturalWidth)).toBeGreaterThan(0);
   await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.waitForURL(/#\/collections\/blog\/entries\/qa-github-draft$/);
   await expect(page.getByText('Changes saved', { exact: true })).toBeVisible();
-  const branch = 'cms/blog/en--qa-github-draft';
+  const branch = 'cms/blog/qa-github-draft';
   assert.ok(branches.has(branch));
+  assert.equal([...branches.keys()].filter(name => name.startsWith('cms/')).length, 1, 'All languages use one workflow branch');
   assert.equal(pullRequests.length, 1);
   assert.equal(branches.get('main'), mainSha);
   const files = commits.get(branches.get(branch)).files;
-  const firstDraft = blobs.get(files['src/content/blog/en--qa-github-draft.md']).toString();
-  assert.match(firstDraft, /pubDate: ["']?2026-10-17/, 'The CMS stores the selected publication date');
-  assert.match(firstDraft, /language: en/);
-  assert.match(firstDraft, /translationKey: qa-github-draft/);
-  assert.match(firstDraft, /slug: qa-github-draft/);
+  const articlePaths = Object.keys(files).filter(name => name.startsWith('src/content/articles/'));
+  assert.deepEqual(articlePaths.sort(), ['src/content/articles/qa-github-draft.json', 'src/content/articles/welcome.json']);
+  const firstDraft = JSON.parse(blobs.get(files['src/content/articles/qa-github-draft.json']).toString());
+  assertDraft(firstDraft);
+  assert.equal(firstDraft.pubDate, '2026-10-17', 'The CMS stores the selected publication date');
   assert.ok(files['public/images/blog/qa-github.webp']);
   const media = blobs.get(files['public/images/blog/qa-github.webp']);
   assert.equal(media.subarray(0, 4).toString(), 'RIFF');
   assert.equal(media.subarray(8, 12).toString(), 'WEBP');
-  await page.reload();
+  await page.reload({ waitUntil: 'networkidle' });
   await expect(page.getByLabel('Publication date', { exact: true })).toHaveValue('2026-10-17');
   await expect(page.getByLabel(/^Updated date/)).toHaveValue('');
-  await expect(page.getByRole('textbox', { name: /^URL slug/ })).toHaveValue('qa-github-draft');
-  await expect(page.getByRole('textbox', { name: /^Translation Key/ })).toHaveValue('qa-github-draft');
+  await expect(page.getByRole('textbox', { name: /^Article ID/ })).toHaveValue('qa-github-draft');
+  for (const [locale, values] of Object.entries(translations)) {
+    const panel = await selectLanguage(page, locale);
+    await expect(panel.getByRole('textbox', { name: /^Title(?: |$)/ })).toHaveValue(values.title);
+    await expect(panel.getByRole('textbox', { name: /^URL slug(?: |$)/ })).toHaveValue(values.slug);
+    await expect(panel.locator('[contenteditable=true]').first()).toHaveText(values.body);
+  }
   await expect.poll(() => page.locator('img[role=presentation]').evaluate(img => img.naturalWidth)).toBeGreaterThan(0);
-  await page.getByRole('textbox', { name: 'Description', exact: true }).fill('Updated GitHub draft.');
+  const englishPanel = await selectLanguage(page, 'en');
+  await englishPanel.getByRole('textbox', { name: /^Description(?: |$)/ }).fill('Updated GitHub draft.');
   await page.getByLabel(/^Updated date/).fill('2026-10-18');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect.poll(() => {
+    const updated = commits.get(branches.get(branch)).files;
+    return JSON.parse(blobs.get(updated['src/content/articles/qa-github-draft.json']).toString()).translations.en.description;
+  }).toBe('Updated GitHub draft.');
   await expect(page.getByText('Changes saved', { exact: true })).toBeVisible();
   const updated = commits.get(branches.get(branch)).files;
-  assert.match(blobs.get(updated['src/content/blog/en--qa-github-draft.md']).toString(), /Updated GitHub draft/);
-  assert.match(blobs.get(updated['src/content/blog/en--qa-github-draft.md']).toString(), /updatedDate: ["']?2026-10-18/);
-  assert.match(blobs.get(updated['src/content/blog/en--qa-github-draft.md']).toString(), /slug: qa-github-draft/);
-  assert.equal(updated['src/content/blog/qa-github-draft.md'], undefined, 'Updating must not rename a language-prefixed file');
+  const updatedDraft = JSON.parse(blobs.get(updated['src/content/articles/qa-github-draft.json']).toString());
+  assertDraft(updatedDraft, true);
+  assert.equal(updatedDraft.updatedDate, '2026-10-18');
   assert.equal(updated['public/images/blog/qa-github.webp'], files['public/images/blog/qa-github.webp']);
+  assert.deepEqual(Object.keys(updated).filter(name => name.startsWith('src/content/articles/')).sort(), articlePaths.sort(), 'Updating does not split or rename the article');
   assert.equal(branches.get('main'), mainSha);
   assert.equal(pullRequests.length, 1, 'Updating reuses the same PR');
-  assert.deepEqual(blobs.get(mainFiles['src/content/blog/welcome.md']), welcome);
+  assert.deepEqual(blobs.get(mainFiles['src/content/articles/welcome.json']), welcome);
+  assert.deepEqual(await readFile('src/content/blog/welcome.md'), legacyWelcome);
   assert.deepEqual(errors, []);
-  console.log(`GitHub backend checks passed: actual Decap OAuth popup handshake, unrelated message guards, base64 WebP upload, draft branch + PR creation, reload with unpublished image, date fields and draft update. ${calls.length} API calls intercepted; no live GitHub writes or real OAuth tokens.`);
+  console.log(`GitHub backend checks passed: actual Decap OAuth popup handshake, unrelated message guards, one JSON with all three Unicode translations, base64 WebP upload, one branch + PR, safe route-before-reload, unpublished image and full-language restoration, date fields and one-branch update. ${calls.length} API calls intercepted; no live GitHub writes or real OAuth tokens.`);
 } finally { await browser.close(); }

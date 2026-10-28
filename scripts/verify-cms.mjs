@@ -13,19 +13,45 @@ assert.equal(config.backend.base_url, 'https://sakura-miyu-blog.pages.dev');
 assert.equal(config.local_backend, undefined);
 assert.equal(config.backend.open_authoring, undefined);
 const collection = config.collections[0];
-assert.equal(collection.folder, 'src/content/blog');
-assert.equal(collection.slug, '{{fields.language}}--{{fields.slug}}');
-assert.equal(collection.preview_path, '{{fields.language}}/blog/{{fields.slug}}');
-const languageField = collection.fields.find(field => field.name === 'language');
-assert.equal(languageField.default, 'uk');
-assert.deepEqual(languageField.options.map(option => option.value), ['uk', 'en', 'ja', 'multilingual']);
+assert.equal(config.collections.length, 1, 'One collection lists one record per article');
+assert.equal(collection.folder, 'src/content/articles');
+assert.equal(collection.extension, 'json');
+assert.equal(collection.format, 'json');
+assert.equal(collection.slug, '{{fields.translationKey}}');
+assert.equal(collection.identifier_field, 'translationKey');
+assert.equal(collection.delete, false, 'Article removal is disabled in the editor');
+assert.equal(config.i18n, undefined, 'Language tabs do not require native default-locale i18n');
+assert.equal(collection.i18n, undefined);
 assert.equal(collection.fields.filter(field => field.name === 'translationKey').length, 1);
-assert.equal(collection.fields.find(field => field.name === 'translationKey').required, false, 'Legacy entries can be edited without adding metadata');
+assert.notEqual(collection.fields.find(field => field.name === 'translationKey').required, false);
 assert.equal(collection.fields.find(field => field.name === 'translationKey').widget, 'string');
-assert.equal(collection.fields.find(field => field.name === 'body').default, '', 'New entries start with one language, without legacy trilingual wrappers');
+assert.deepEqual(collection.fields.map(field => field.name), ['translationKey', 'pubDate', 'updatedDate', 'category', 'tags', 'image', 'featured', 'draft', 'translations']);
+const translations = collection.fields.find(field => field.name === 'translations');
+assert.equal(translations.widget, 'translation-tabs');
+assert.deepEqual(translations.fields.map(field => field.name), ['uk', 'en', 'ja']);
+for (const language of translations.fields) {
+  assert.equal(language.widget, 'object');
+  assert.equal(language.required, false);
+  assert.deepEqual(language.fields.map(field => field.name), ['title', 'slug', 'description', 'imageAlt', 'seoTitle', 'seoDescription', 'body', 'tags']);
+  assert.ok(language.fields.every(field => field.required === false), 'Partial translations can be saved');
+  const body = language.fields.find(field => field.name === 'body');
+  assert.equal(body.widget, 'markdown');
+  assert.equal(body.default, '');
+  assert.deepEqual(body.modes, ['raw']);
+  const tags = language.fields.find(field => field.name === 'tags');
+  assert.equal(tags.widget, 'list');
+  assert.equal(tags.default, undefined, 'Opening a translation must preserve missing tags and shared inheritance');
+}
+for (const name of ['pubDate', 'updatedDate']) {
+  const field = collection.fields.find(field => field.name === name);
+  assert.equal(field.widget, 'datetime');
+  assert.equal(field.format, 'YYYY-MM-DD');
+  assert.equal(field.date_format, 'DD/MM/YYYY');
+  assert.equal(field.time_format, false);
+  assert.equal(field.picker_utc, true);
+}
 assert.deepEqual(collection.fields.find(field => field.name === 'category').options, [...categories]);
 assert.equal(collection.fields.find(field => field.name === 'draft').default, false);
-assert.equal(collection.fields.find(field => field.name === 'body').widget, 'markdown');
 assert.equal(collection.fields.find(field => field.name === 'image').choose_url, false);
 assert.equal(config.media_folder, 'public/images/blog');
 assert.ok(!config.media_library?.name, 'No external media provider');
@@ -53,4 +79,4 @@ for (const filename of ['public/admin/start.js', 'public/admin/editor.js', 'publ
   const content = await readFile(filename, 'utf8');
   assert.ok(!/gh[pousr]_[A-Za-z0-9]{20,}|client_secret\s*[=:]\s*["'][^"']+["']/.test(content), `No credentials in ${filename}`);
 }
-console.log(`CMS configuration verified: matching Astro categories, editorial workflow, repository media, exact function routes and ${vendor.length} pinned local vendor assets. No paid integrations or frontend secrets.`);
+console.log(`CMS configuration verified: one JSON article with shared settings and three optional language tabs, unchanged dates, matching Astro categories, editorial workflow, repository media, exact function routes and ${vendor.length} pinned local vendor assets. No paid integrations or frontend secrets.`);

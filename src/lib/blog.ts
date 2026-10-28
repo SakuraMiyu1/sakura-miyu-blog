@@ -5,7 +5,7 @@ import type { Locale } from './i18n';
 export type Post = CollectionEntry<'blog'>;
 export * from './post-utils';
 export async function posts(locale?: Locale) {
-  const entries = (await getCollection('blog')).filter(post => post.data.language !== 'multilingual' && isPublished(post));
+  const entries = (await getCollection('blog')).filter(post => !post.data.legacyOnly && post.data.language !== 'multilingual' && isPublished(post));
   const keys = new Set<string>();
   const urls = new Set<string>();
   for (const post of entries) {
