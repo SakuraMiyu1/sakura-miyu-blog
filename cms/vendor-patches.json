@@ -13,6 +13,12 @@
       "reason": "Ignore non-string messages and messages from windows other than the OAuth popup before calling data.indexOf. Preserve exact origin checks and the Decap authorization protocol.",
       "find": "authorizeCallback(e,t){const n=r=>{if(r.origin===this.base_url){if(0===r.data.indexOf(",
       "replace": "authorizeCallback(e,t){const n=r=>{if(r.origin===this.base_url&&r.source===this.authWindow&&typeof r.data===\"string\"){if(0===r.data.indexOf("
+    },
+    {
+      "source": "decap-cms-backend-github/src/API.ts: requestAllPages",
+      "reason": "Paginated GitHub requests reject with a plain response object on HTTP failure, producing [object Object] before draft persistence. Normalize through the existing APIError handler and explain 401 without logging out, clearing local drafts or changing OAuth.",
+      "find": "async requestAllPages(e,t={}){t={cache:\"no-cache\",...t};const n=await this.requestHeaders(t.headers||{}),r=this.urlFor(e,t),i=await ih(r,{...t,headers:n},\"next\",this.nextUrlProcessor()),o=await Promise.all(i.map(e=>this.parseResponse(e)));return[].concat(...o)}generateContentKey(e,t){const n=Cv(e,t);return this.useOpenAuthoring?`${this.repo}/${n}`:n}parseContentKey(e){return this.useOpenAuthoring?Ev(e.slice(this.repo.length+1)):Ev(e)}checkMetadataRef(){",
+      "replace": "async requestAllPages(e,t={}){try{t={cache:\"no-cache\",...t};const n=await this.requestHeaders(t.headers||{}),r=this.urlFor(e,t),i=await ih(r,{...t,headers:n},\"next\",this.nextUrlProcessor()),o=await Promise.all(i.map(e=>this.parseResponse(e)));return[].concat(...o)}catch(error){const status=Number(error?.status)||500;const message=status===401?\"GitHub sign-in is no longer valid (401 Bad credentials). Keep this editor open and copy unsaved text before signing in again.\":typeof error?.message===\"string\"?error.message:\"GitHub could not complete the request.\";return this.handleRequestError({message},status)}}generateContentKey(e,t){const n=Cv(e,t);return this.useOpenAuthoring?`${this.repo}/${n}`:n}parseContentKey(e){return this.useOpenAuthoring?Ev(e.slice(this.repo.length+1)):Ev(e)}checkMetadataRef(){"
     }
   ],
   "original": {

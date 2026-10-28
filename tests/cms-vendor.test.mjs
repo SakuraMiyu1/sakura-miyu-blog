@@ -70,3 +70,20 @@ test('Blob fetch permission is limited to admin CSP; script/object protections r
   assert.match(csp, /object-src 'none';/);
   assert.ok(!csp.match(/script-src [^;]*blob:/));
 });
+
+test('GitHub paginated failures report API errors instead of stringifying response objects', async () => {
+  const patch = patches.find(item => item.source === 'decap-cms-backend-github/src/API.ts: requestAllPages');
+  assert.ok(vendor.includes(patch.replace));
+  const method = code => code.slice(0, code.indexOf('generateContentKey('));
+  const run = (code, getAllResponses) => Object.assign(runInNewContext(`({${method(code)}})`, { ih: getAllResponses }), {
+    requestHeaders: async () => ({}), urlFor: value => value, nextUrlProcessor: () => value => value,
+    parseResponse: async response => response,
+    handleRequestError: (error, status) => { throw Object.assign(new Error(error.message), { status }); }
+  }).requestAllPages('/repos/SakuraMiyu1/sakura-miyu-blog/pulls');
+  const rejected = { message: 'Bad credentials', documentation_url: 'https://docs.github.com/rest', status: '401' };
+  await assert.rejects(run(patch.find, async () => { throw rejected; }), error => error === rejected && String(error) === '[object Object]');
+  await assert.rejects(run(patch.replace, async () => { throw rejected; }), error => error.status === 401 && /GitHub sign-in is no longer valid.*copy unsaved text/.test(error.message));
+  await assert.rejects(run(patch.replace, async () => { throw { message: 'API rate limit exceeded', status: '403' }; }), error => error.status === 403 && error.message === 'API rate limit exceeded');
+  await assert.rejects(run(patch.replace, async () => { throw new TypeError('Failed to fetch'); }), error => error.status === 500 && error.message === 'Failed to fetch');
+  assert.equal(JSON.stringify(await run(patch.replace, async () => [[{ number: 1 }], [{ number: 2 }]])), '[{"number":1},{"number":2}]');
+});

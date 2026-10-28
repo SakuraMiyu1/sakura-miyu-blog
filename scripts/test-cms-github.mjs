@@ -38,6 +38,8 @@ const branches = new Map();
 const pullRequests = [];
 const calls = [];
 const errors = [];
+let rejectDraftLookup = false;
+let rejectedDraftLookups = 0;
 const putBlob = buffer => {
   const sha = createHash('sha1').update(buffer).digest('hex');
   blobs.set(sha, Buffer.from(buffer));
@@ -70,6 +72,10 @@ try {
     const method = request.method();
     const body = request.postDataJSON();
     calls.push({ method, path });
+    if (path === '/pulls' && method === 'GET' && rejectDraftLookup) {
+      rejectedDraftLookups++;
+      return route.fulfill({ status: 401, json: { message: 'Bad credentials', documentation_url: 'https://docs.github.com/rest', status: '401' } });
+    }
     let result;
     if (fullPath === '/user' || fullPath === '/users/SakuraMiyu1') result = { login: 'SakuraMiyu1', name: 'Sakura Miyu' };
     else if (path === '') result = { owner: { login: 'SakuraMiyu1' }, permissions: { push: true }, private: false, default_branch: 'main' };
@@ -117,6 +123,10 @@ try {
       while (commit && commit.sha !== from) { history.unshift(commit); commit = commits.get(commit.parents[0]?.sha); }
       result = { base_commit: base, commits: history, files: Object.entries(tip.files).filter(([name, sha]) => sha !== base.files[name]).map(([filename, sha]) => ({ filename, sha, status: base.files[filename] ? 'modified' : 'added', ...(filename.endsWith('.json') ? { patch: 'fixture article diff' } : {}) })) };
     } else if (path === '/pulls' && method === 'POST') {
+      assert.equal(typeof body.title, 'string');
+      assert.ok(body.title.trim(), 'GitHub requires a nonempty PR title');
+      assert.equal(body.base, 'main');
+      assert.ok(branches.has(body.head.replace('SakuraMiyu1:', '')), 'The PR head branch must exist');
       result = { number: pullRequests.length + 1, state: 'open', labels: [], updated_at: '2026-10-17T12:00:00Z', user: { login: 'SakuraMiyu1' }, head: { ref: body.head.replace('SakuraMiyu1:', ''), sha: head(body.head) }, base: { ref: 'main', sha: mainSha } };
       pullRequests.push(result);
     } else if (path === '/pulls') {
@@ -173,6 +183,26 @@ try {
   await page.locator('input[type=file]').setInputFiles({ name: 'qa-github.png', mimeType: 'image/png', buffer: await readFile('public/favicon.png') });
   await page.getByRole('button', { name: /choose selected/i }).click();
   await expect.poll(() => page.locator('img[role=presentation]').evaluate(img => img.naturalWidth)).toBeGreaterThan(0);
+  rejectDraftLookup = true;
+  const writesBeforeFailure = calls.filter(call => call.method !== 'GET').length;
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect.poll(() => rejectedDraftLookups).toBeGreaterThan(0);
+  await expect(page.getByText(/Failed to persist entry:.*GitHub sign-in is no longer valid/)).toBeVisible();
+  await expect(page.getByText(/\[object Object\]/)).toHaveCount(0);
+  assert.equal(calls.filter(call => call.method !== 'GET').length, writesBeforeFailure, 'A rejected draft lookup must not upload media or create files/branches');
+  assert.equal(pullRequests.length, 0);
+  assert.deepEqual([...branches.keys()], ['main']);
+  for (const [locale, values] of Object.entries(translations)) {
+    const panel = await selectLanguage(page, locale);
+    for (const [field, label] of Object.entries({ title: 'Title', slug: 'URL slug', description: 'Description', imageAlt: 'Featured image alt text', seoTitle: 'SEO title', seoDescription: 'SEO description' })) {
+      await expect(panel.getByRole('textbox', { name: new RegExp('^' + label + '(?: |$)') })).toHaveValue(values[field]);
+    }
+    await expect(panel.locator('[contenteditable=true]').first()).toHaveText(values.body);
+  }
+  await expect.poll(() => page.locator('img[role=presentation]').evaluate(img => img.naturalWidth)).toBeGreaterThan(0);
+  assert.deepEqual(errors, ['Object'], 'Decap rejects its Redux failure action after the deliberately failed save; the visible toast must explain the 401');
+  errors.length = 0;
+  rejectDraftLookup = false;
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await page.waitForURL(/#\/collections\/blog\/entries\/qa-github-draft$/);
   await expect(page.getByText('Changes saved', { exact: true })).toBeVisible();
@@ -222,5 +252,5 @@ try {
   assert.deepEqual(blobs.get(mainFiles['src/content/articles/welcome.json']), welcome);
   assert.deepEqual(await readFile('src/content/blog/welcome.md'), legacyWelcome);
   assert.deepEqual(errors, []);
-  console.log(`GitHub backend checks passed: actual Decap OAuth popup handshake, unrelated message guards, one JSON with all three Unicode translations, base64 WebP upload, one branch + PR, safe route-before-reload, unpublished image and full-language restoration, date fields and one-branch update. ${calls.length} API calls intercepted; no live GitHub writes or real OAuth tokens.`);
+  console.log(`GitHub backend checks passed: actual Decap OAuth popup handshake, unrelated message guards, rejected-token 401 diagnosis with all three translations and image preserved, successful save retry, one JSON with all three Unicode translations, base64 WebP upload, one branch + PR, safe route-before-reload, unpublished image and full-language restoration, date fields and one-branch update. ${calls.length} API calls intercepted; no live GitHub writes or real OAuth tokens.`);
 } finally { await browser.close(); }
