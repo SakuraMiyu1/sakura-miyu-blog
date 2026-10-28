@@ -166,7 +166,7 @@ try {
     for (const [field, label] of Object.entries({ title: 'Title', slug: 'URL slug', description: 'Description', imageAlt: 'Featured image alt text', seoTitle: 'SEO title', seoDescription: 'SEO description' })) {
       await panel.getByRole('textbox', { name: new RegExp('^' + label + '(?: |$)') }).fill(values[field]);
     }
-    await panel.locator('[contenteditable=true]').first().fill(values.body);
+    await panel.getByRole('textbox', { name: 'Story Markdown source', exact: true }).fill(values.body);
   }
   await selectLanguage(page, 'uk');
   await page.getByRole('button', { name: 'Choose an image', exact: true }).click();
@@ -199,7 +199,7 @@ try {
     const panel = await selectLanguage(page, locale);
     await expect(panel.getByRole('textbox', { name: /^Title(?: |$)/ })).toHaveValue(values.title);
     await expect(panel.getByRole('textbox', { name: /^URL slug(?: |$)/ })).toHaveValue(values.slug);
-    await expect(panel.locator('[contenteditable=true]').first()).toHaveText(values.body);
+    await expect(panel.getByRole('textbox', { name: 'Story Markdown source', exact: true })).toHaveValue(values.body);
   }
   await expect.poll(() => page.locator('img[role=presentation]').evaluate(img => img.naturalWidth)).toBeGreaterThan(0);
   const englishPanel = await selectLanguage(page, 'en');

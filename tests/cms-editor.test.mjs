@@ -13,6 +13,10 @@ class Data {
   get(key, fallback) { return this.value[key] === undefined ? fallback : this.value[key]; }
   set(key, value) { return new Data({ ...this.value, [key]: value }); }
 }
+class Component {
+  constructor(props) { this.props = props; }
+  setState(value, callback) { this.state = { ...this.state, ...value }; callback?.(); }
+}
 class ObjectControl {
   constructor(props) { this.props = props; this.state = { collapsed: false }; this.renderFields = fields => fields.map(field => this.controlFor(field, field.get('name'))); }
   setState(value, callback) { this.state = { ...this.state, ...value }; callback?.(); }
@@ -22,13 +26,16 @@ class ObjectControl {
 }
 const baseWidget = { control: ObjectControl, preview() {}, schema: { properties: { collapsed: { type: 'boolean' } } } };
 const CMS = {
-  getWidget: name => name === 'object' ? baseWidget : widgets[name],
+  getWidget: name => ['object', 'markdown', 'richtext'].includes(name) ? baseWidget : widgets[name],
   registerWidget: widget => { widgets[widget.name] = widget; },
   registerPreviewStyle() {},
   registerPreviewTemplate: (_name, callback) => { preview = callback; },
   registerEventListener: event => { handlers[event.name] = event.handler; }
 };
-runInNewContext(source, { window: { CMS, h } });
+const createClass = methods => class extends Component {
+  constructor(props) { super(props); Object.assign(this, methods); this.state = this.getInitialState?.() || {}; }
+};
+const formatStory = runInNewContext(source + '\nformatStory;', { window: { CMS, h, createClass, location: { origin: 'https://sakura-miyu-blog.pages.dev' } }, requestAnimationFrame: callback => callback() });
 const entry = (data, { slug, newRecord = true } = {}) => ({ get: key => ({ data: new Data(data), slug, newRecord })[key] });
 const complete = overrides => ({ title: 'A dream', slug: 'a-dream', description: 'A diary thought', body: 'A little story.', ...overrides });
 const article = overrides => ({ translationKey: 'a-dream', pubDate: '2026-10-17', updatedDate: '', category: 'Diary', tags: ['Anime'], featured: false, draft: false, translations: { uk: complete() }, ...overrides });
@@ -112,16 +119,74 @@ test('Tabs keep all three language controls mounted and support keyboard selecti
   assert.equal(buttons[1].props['aria-controls'], 'translations-field-1-panel-en');
 });
 
-test('Preview shows complete language versions and resolves nested body widgets and shared media', () => {
+test('Preview follows selected language and renders nested Story before publication fields are complete', () => {
   const localizedFields = ['uk', 'en', 'ja'].map(name => new Data({ name, fields: [new Data({ name: 'body' })] }));
-  const input = article({ image: '/images/test.webp', translations: { en: complete({ imageAlt: 'A blossom' }), ja: complete({ title: 'Not complete yet', body: ' \n ' }) } });
+  const input = article({ image: '/images/test.webp', translations: { en: { body: '**A little story.**', imageAlt: 'A blossom' }, ja: complete({ title: 'Not complete yet', body: ' \n ' }) } });
   const bodies = [];
-  const rendered = preview({ entry: entry(input), fields: [new Data({ name: 'translations', fields: localizedFields })], widgetFor: (name, _fields, value) => { bodies.push({ name, value }); return h('markdown', {}, value.body); }, getAsset: () => 'blob:test-image' });
-  const section = rendered.children.find(child => child?.type === 'section');
-  assert.equal(section.props.lang, 'en');
-  assert.equal(rendered.children.filter(child => child?.type === 'section').length, 1);
+  const instance = new preview({ entry: entry(input), fields: [new Data({ name: 'translations', fields: localizedFields })], widgetFor: (name, _fields, value) => { bodies.push({ name, value }); return h('markdown', {}, value.get('body')); }, getAsset: () => 'blob:test-image' });
+  instance.componentDidMount();
+  const tabs = new widgets['translation-tabs'].controlComponent({});
+  tabs.selectLocale('en');
+  const rendered = instance.render();
+  assert.equal(rendered.props.lang, 'en');
   assert.equal(bodies.length, 1);
   assert.equal(bodies[0].name, 'body');
-  assert.equal(bodies[0].value.body, 'A little story.');
-  assert.equal(section.children.find(child => child?.type === 'img').props.src, 'blob:test-image');
+  assert.equal(bodies[0].value.get('body'), '**A little story.**');
+  assert.equal(rendered.children.find(child => child?.type === 'img').props.src, 'blob:test-image');
+  tabs.selectLocale('ja');
+  assert.equal(instance.render().props.lang, 'ja');
+  assert.equal(bodies.length, 1, 'An empty Story does not render another language');
+  instance.componentWillUnmount();
+});
+
+test('Source formatting preserves Unicode and text outside the selection', () => {
+  for (const [command, expected] of Object.entries({ bold: '**夢**', italic: '*夢*', code: '`夢`', link: '[夢](https://)', 'code-block': '```\n夢\n```' })) {
+    assert.equal(formatStory('до 夢 після', 3, 4, command).value, `до ${expected} після`);
+  }
+  for (const [command, prefix] of Object.entries({ h1: '# ', h2: '## ', h3: '### ', h4: '#### ', quote: '> ', 'ordered-list': '1. ', 'unordered-list': '- ' })) {
+    assert.equal(formatStory('α\nмрія\nω', 3, 4, command).value, `α\n${prefix}мрія\nω`);
+  }
+  assert.equal(formatStory('one\ntwo\nthree', 0, 7, 'ordered-list').value, '1. one\n2. two\nthree');
+  assert.equal(formatStory('# Dream', 0, 7, 'h2').value, '## Dream');
+  assert.equal(formatStory('\nDream', 0, 0, 'h1').value, '# \nDream');
+  assert.equal(formatStory('`dream`', 0, 7, 'code').value, '`` `dream` ``');
+  assert.equal(formatStory('```', 0, 3, 'code-block').value, '````\n```\n````');
+});
+
+test('Source and rendered views never serialize or strip stored HTML', () => {
+  const value = '<details open>\n<summary>夢</summary>\n<strong>Мрія</strong>\n</details>\n\n**Dream**';
+  const changes = [];
+  const control = new widgets['sakura-story'].controlComponent({ value, field: new Data({}), onChange: next => changes.push(next) });
+  control.render();
+  control.setState({ mode: 'preview' });
+  control.render();
+  control.setState({ mode: 'source' });
+  control.render();
+  assert.deepEqual(changes, []);
+  assert.equal(control.props.value, value);
+  assert.equal(save(article({ translations: { uk: complete({ body: value }) } })).value.translations.uk.body, value);
+});
+
+test('Async image insertion uses the original selection even if the textarea ref is temporarily detached', () => {
+  let value;
+  const control = new widgets['sakura-story'].controlComponent({ value: 'before 夢 after', onChange: next => { value = next; } });
+  control.imageSelection = { start: 7, end: 8 };
+  control.source = null;
+  control.insertImage('/images/blog/dream.webp');
+  assert.equal(value, 'before ![夢](/images/blog/dream.webp) after');
+});
+
+test('Sanitized preview resolves local inline images only to same-origin Blob proxies', () => {
+  const original = '/images/blog/dream.webp';
+  const image = { src: original, getAttribute: () => original };
+  const instance = new widgets['sakura-story'].previewComponent({ field: new Data({}), getAsset: () => 'javascript:alert(1)' });
+  instance.container = { querySelectorAll: () => [image] };
+  for (const asset of ['javascript:alert(1)', 'blob:https://example.com/foreign', 'blob:https://sakura-miyu-blog.pages.dev.evil/foreign']) {
+    instance.props.getAsset = () => asset;
+    instance.componentDidUpdate();
+    assert.equal(image.src, original);
+  }
+  instance.props.getAsset = () => 'blob:https://sakura-miyu-blog.pages.dev/local';
+  instance.componentDidMount();
+  assert.equal(image.src, 'blob:https://sakura-miyu-blog.pages.dev/local');
 });

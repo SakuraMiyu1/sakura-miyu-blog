@@ -35,9 +35,9 @@ for (const language of translations.fields) {
   assert.deepEqual(language.fields.map(field => field.name), ['title', 'slug', 'description', 'imageAlt', 'seoTitle', 'seoDescription', 'body', 'tags']);
   assert.ok(language.fields.every(field => field.required === false), 'Partial translations can be saved');
   const body = language.fields.find(field => field.name === 'body');
-  assert.equal(body.widget, 'markdown');
+  assert.equal(body.widget, 'sakura-story');
   assert.equal(body.default, '');
-  assert.deepEqual(body.modes, ['raw']);
+  assert.equal(body.sanitize_preview, true);
   const tags = language.fields.find(field => field.name === 'tags');
   assert.equal(tags.widget, 'list');
   assert.equal(tags.default, undefined, 'Opening a translation must preserve missing tags and shared inheritance');
