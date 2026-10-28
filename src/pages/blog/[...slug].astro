@@ -1,6 +1,6 @@
 ---
 import LegacyRedirect from '../../layouts/LegacyRedirect.astro';
 import { legacyEntries, legacyTarget } from '../../lib/routes';
-export async function getStaticPaths() { return (await legacyEntries()).map(post => ({ params: { slug: post.id }, props: { to: legacyTarget(post) } })); }
+export async function getStaticPaths() { return Promise.all((await legacyEntries()).map(async post => ({ params: { slug: post.id }, props: { to: await legacyTarget(post) } }))); }
 ---
 <LegacyRedirect to={Astro.props.to} />

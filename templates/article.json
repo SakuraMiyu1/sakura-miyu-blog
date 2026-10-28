@@ -1,0 +1,41 @@
+{
+  "translationKey": "a-little-moment",
+  "pubDate": "2026-10-28",
+  "updatedDate": "",
+  "category": "Diary",
+  "image": "",
+  "featured": false,
+  "draft": true,
+  "tags": [
+    "Diary"
+  ],
+  "translations": {
+    "uk": {
+      "title": "Маленька мить, яку хочеться зберегти",
+      "slug": "malenka-myt",
+      "description": "Тиха сторінка мого маленького світу.",
+      "imageAlt": "",
+      "seoTitle": "",
+      "seoDescription": "",
+      "body": "Сьогодні я зберегла тут маленьку красиву мить. 🌸\n\nІноді достатньо чашки чаю, улюбленої історії та кількох слів у щоденнику.\n\n**Місце для моїх наступних думок.**"
+    },
+    "en": {
+      "title": "A little moment worth keeping",
+      "slug": "a-little-moment",
+      "description": "A quiet page from my little world.",
+      "imageAlt": "",
+      "seoTitle": "",
+      "seoDescription": "",
+      "body": "Today, I'm keeping a small beautiful moment here. 🌸\n\nSometimes a cup of tea, a favourite story, and a few words in my diary are enough.\n\n**A little space for my next thoughts.**"
+    },
+    "ja": {
+      "title": "残しておきたい小さなひととき",
+      "slug": "chiisana-hitotoki",
+      "description": "私の小さな世界から、静かな一ページ。",
+      "imageAlt": "",
+      "seoTitle": "",
+      "seoDescription": "",
+      "body": "今日は、小さな美しいひとときをここに残します。🌸\n\nお茶と、大好きな物語と、日記につづる少しの言葉。それだけで満たされる日もあります。\n\n**次の想いを書き留めるための、小さな余白。**"
+    }
+  }
+}

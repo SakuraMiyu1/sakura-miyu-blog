@@ -1,0 +1,242 @@
+{
+  "version": 1,
+  "articles": [
+    {
+      "key": "welcome",
+      "sources": [
+        {
+          "id": "welcome",
+          "path": "src/content/blog/welcome.md",
+          "sha256": "72d62cfdaa8ffbbe9362a86186a2e4c713e2554b47fd86b8c59feabde71d4164"
+        }
+      ],
+      "translations": {
+        "uk": {
+          "url": "/uk/blog/welcome/",
+          "bodySha256": "fbf6e74e951393d885c44a9af79df679d18ed77cee2518649b6dfc24d7b68322",
+          "metadata": {
+            "title": "🌸 Вітаю у Sakura Miyu's Little World 🖤",
+            "description": "Моє маленьке знайомство: улюблені світи, творчість і думки, що розквітають у щоденнику.",
+            "slug": "welcome",
+            "imageAlt": "Сакура Мію під рожевим цвітом сакури у місячному світі Gothic Kawaii",
+            "seoTitle": "",
+            "seoDescription": "",
+            "pubDate": "2026-10-16",
+            "updatedDate": "",
+            "category": "Diary",
+            "image": "/images/welcome.webp",
+            "featured": true,
+            "draft": false,
+            "tags": [
+              "Diary",
+              "Anime",
+              "Cosplay",
+              "Gaming",
+              "Writing",
+              "University",
+              "Fanfiction"
+            ]
+          }
+        },
+        "en": {
+          "url": "/en/blog/welcome/",
+          "bodySha256": "23d113e5782abfe67c3b03b9d94f33b8a6789f6b52aed9ba76c4aa0106010993",
+          "metadata": {
+            "title": "🌸 Welcome to Sakura Miyu's Little World 🖤",
+            "description": "Come meet the girl behind the diary, her favourite worlds, and the stories waiting to bloom.",
+            "slug": "welcome",
+            "imageAlt": "Sakura Miyu beneath pink sakura blossoms in a moonlit Gothic Kawaii world",
+            "seoTitle": "",
+            "seoDescription": "",
+            "pubDate": "2026-10-16",
+            "updatedDate": "",
+            "category": "Diary",
+            "image": "/images/welcome.webp",
+            "featured": true,
+            "draft": false,
+            "tags": [
+              "Diary",
+              "Anime",
+              "Cosplay",
+              "Gaming",
+              "Writing",
+              "University",
+              "Fanfiction"
+            ]
+          }
+        },
+        "ja": {
+          "url": "/ja/blog/welcome/",
+          "bodySha256": "a1eb957823e0eaa7e5da75f40a600834073750ac265eda896ccec81b03ba04d8",
+          "metadata": {
+            "title": "🌸 Sakura Miyu's Little Worldへようこそ 🖤",
+            "description": "日記を書いている私のこと、大好きな世界、そしてこれから咲く物語を少しだけ紹介します。",
+            "slug": "welcome",
+            "imageAlt": "月明かりのゴシックかわいい世界で、ピンクの桜の下にいるさくらみゆ",
+            "seoTitle": "",
+            "seoDescription": "",
+            "pubDate": "2026-10-16",
+            "updatedDate": "",
+            "category": "Diary",
+            "image": "/images/welcome.webp",
+            "featured": true,
+            "draft": false,
+            "tags": [
+              "Diary",
+              "Anime",
+              "Cosplay",
+              "Gaming",
+              "Writing",
+              "University",
+              "Fanfiction"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "key": "my-little-anime-world",
+      "sources": [
+        {
+          "id": "my-little-anime-world",
+          "path": "src/content/blog/my-little-anime-world.md",
+          "sha256": "60f3e9d49d762a277b62ed9da497dbb477e035114bac11d1c662431a6962fdfe"
+        }
+      ],
+      "translations": {
+        "uk": {
+          "url": "/uk/blog/my-little-anime-world/",
+          "bodySha256": "b2ab270d2c58b4f68d32f29a11291fe02be6332bc71c0aa87e198da32d0853bc",
+          "metadata": {
+            "title": "🌸 Я вже бачу, як починатиметься наш допис  «Мій маленький аніме-світ: від відеокасети до мрії про косплей» 🎀",
+            "description": "Моя особиста історія про перше знайомство з аніме, улюблених персонажів, мрії про косплей та подорож до Японії.",
+            "slug": "my-little-anime-world",
+            "imageAlt": "Сакура Мію з довгим рожевим волоссям у кімнаті з аніме-плакатами, старим телевізором, відеокасетами та костюмами для косплею.",
+            "seoTitle": "Мій аніме-світ: від Принцеси Мононоке до косплею | Sakura Miyu",
+            "seoDescription": "Історія Сакури Мію про перше аніме на VHS, любов до Луїзи, Наруто й магічних світів, мрії про косплей, аніме-фестивалі та подорож до Японії.",
+            "pubDate": "2026-10-17",
+            "updatedDate": "",
+            "category": "Anime",
+            "image": "/images/blog/sakura-miyu.webp",
+            "featured": false,
+            "draft": false,
+            "tags": [
+              "anime",
+              "cosplay",
+              "japan",
+              "zero-no-tsukaima",
+              "princess-mononoke",
+              "naruto"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "key": "little-world-be-yourself",
+      "sources": [
+        {
+          "id": "malyenkyi-svit-de-mozhna-buty-soboiu",
+          "path": "src/content/blog/malyenkyi-svit-de-mozhna-buty-soboiu.md",
+          "sha256": "90f89a72111066a22f0e59552c6e8f6ff107dd0206fd7c16038b64c784327c63"
+        },
+        {
+          "id": "a-little-world-where-you-can-be-yourself",
+          "path": "src/content/blog/a-little-world-where-you-can-be-yourself.md",
+          "sha256": "bb39b6418514cd6e6f2f97c0516303f655c12613b569a33a5fba0001d8f37fff"
+        },
+        {
+          "id": "jibunrashiku-irareru-chiisana-sekai",
+          "path": "src/content/blog/jibunrashiku-irareru-chiisana-sekai.md",
+          "sha256": "3c55341dc57571d90428aaaa3f4d9ce4d13d455c9e42b57d11eaae8fe73b86b9"
+        }
+      ],
+      "translations": {
+        "uk": {
+          "url": "/uk/blog/malyenkyi-svit-de-mozhna-buty-soboiu/",
+          "bodySha256": "ad693cb4cc506ac4ca02c9ee03058b6cdead0c9bf912fde0947e8f39ecb75931",
+          "metadata": {
+            "title": "Маленький світ, у якому можна бути собою",
+            "description": "Особистий блог Сакури Мію про аніме, творчість, косплей, мрії та маленькі радощі життя. Затишний світ, де можна залишатися собою.",
+            "slug": "malyenkyi-svit-de-mozhna-buty-soboiu",
+            "imageAlt": "Сакура Мію з довгим рожевим волоссям у чорно-рожевому вбранні Gothic Lolita сидить у затишній кімнаті біля вікна. Поруч із нею сплять хаскі, а на столі лежать щоденник, книжки й творчі речі.",
+            "seoTitle": "Маленький світ, у якому можна бути собою | Sakura Miyu",
+            "seoDescription": "Особистий блог Сакури Мію про аніме, творчість, косплей, мрії та маленькі радощі життя. Затишний світ, де можна залишатися собою.",
+            "pubDate": "2026-10-20",
+            "updatedDate": "",
+            "category": "Diary",
+            "image": "/images/blog/n-.webp",
+            "featured": false,
+            "draft": false,
+            "tags": [
+              "Sakura Miyu",
+              "особистий блог",
+              "аніме",
+              "творчість",
+              "мрії",
+              "натхнення",
+              "косплей",
+              "щоденник"
+            ]
+          }
+        },
+        "en": {
+          "url": "/en/blog/a-little-world-where-you-can-be-yourself/",
+          "bodySha256": "ec97d18289fbd75022686cd754320ca00f953e50100b4f7967dd684491770baf",
+          "metadata": {
+            "title": "🌸 A Little World Where You Can Be Yourself",
+            "description": "A cosy little corner where dreams can bloom. Sakura Miyu shares her love of anime, creativity, and the joy of building a world where everyone can be themselves. 🌸",
+            "slug": "a-little-world-where-you-can-be-yourself",
+            "imageAlt": "Sakura Miyu, a pink-haired anime girl in a black-and-pink Gothic Lolita outfit, writing in her diary in a cosy room beside a rainy window, with a sleeping husky and kitten nearby.",
+            "seoTitle": "A Little World Where You Can Be Yourself",
+            "seoDescription": "Explore Sakura Miyu's cosy world of anime, creativity, cosplay, dreams, and life's little joys. A personal blog where you can truly be yourself.",
+            "pubDate": "2026-10-20",
+            "updatedDate": "",
+            "category": "Diary",
+            "image": "/images/blog/n-.webp",
+            "featured": false,
+            "draft": false,
+            "tags": [
+              "Sakura Miyu",
+              "personal blog",
+              "anime",
+              "creativity",
+              "dreams",
+              "inspiration",
+              "cosplay",
+              "diary"
+            ]
+          }
+        },
+        "ja": {
+          "url": "/ja/blog/jibunrashiku-irareru-chiisana-sekai/",
+          "bodySha256": "92432f3e55f6ef3e31815d8a3c5b31dc8a3cf1f86c53cd6cb4f6fab8768ac8dd",
+          "metadata": {
+            "title": "自分らしくいられる、小さな世界",
+            "description": "アニメや創作、夢が大好きなサクラ・ミユの小さな世界。自分らしくいられる居心地のいい場所をつくりたいという想いを綴った、心温まる日記です。🌸",
+            "slug": "jibunrashiku-irareru-chiisana-sekai",
+            "imageAlt": "ピンク色の長い髪と黒いリボンが特徴のサクラ・ミユ。黒とピンクのゴシックロリータ衣装を着て、雨の降る窓辺の温かな部屋で日記を書いています。そばではハスキー犬と子猫が眠っています。",
+            "seoTitle": "自分らしくいられる、小さな世界 | Sakura Miyu",
+            "seoDescription": "サクラ・ミユの小さな世界へようこそ。アニメ、創作、コスプレ、夢、日常の小さな幸せを綴る、自分らしくいられる温かなブログです。",
+            "pubDate": "2026-10-20",
+            "updatedDate": "",
+            "category": "Diary",
+            "image": "/images/blog/n-.webp",
+            "featured": false,
+            "draft": false,
+            "tags": [
+              "サクラ・ミユ",
+              "アニメ",
+              "創作, コスプレ",
+              "夢",
+              "日記",
+              "癒し",
+              "自分らしさ"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "lineEndings": "LF"
+}

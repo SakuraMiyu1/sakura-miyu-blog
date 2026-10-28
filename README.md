@@ -1,8 +1,10 @@
 # Sakura Miyu's Little World 🌸🖤
 
-A personal Pink + Black Gothic Kawaii blog for **Sakura Miyu / さくらみゆ**. Built with Astro, TypeScript, plain CSS, and local Markdown/MDX content. All pages are generated as static files. No database, accounts, analytics, paid services, or runtime API is required.
+A personal Pink + Black Gothic Kawaii blog for **Sakura Miyu / さくらみゆ**. Built with Astro, TypeScript, plain CSS, and local JSON articles containing Markdown bodies. Original Markdown/MDX support remains available for legacy content. Public pages are static; no database, reader accounts, analytics or paid services are required.
 
 Live website: [sakura-miyu-blog.pages.dev](https://sakura-miyu-blog.pages.dev/).
+
+The unified article editor described below is a change prepared for pull-request review. This documentation does not confirm that the change has been merged or deployed to production.
 
 ## Start locally
 
@@ -29,7 +31,8 @@ npm run preview
 ```text
 src/
   components/       Header, hero, cards, profile, filters, share, footer
-  content/blog/     Markdown and MDX posts
+  content/articles/ One JSON record per article, with three translations
+  content/blog/     Preserved original Markdown and legacy content
   layouts/          Base SEO layout and pages with a sidebar
   lib/              Identity, translations, localized loader and URL helpers
   pages/            Localized routes, legacy redirects, sitemap and feeds
@@ -55,39 +58,23 @@ package-lock.json
 
 An optional self-hosted **Decap CMS** writing desk is prepared at `/admin/`. See [CMS_SETUP.md](CMS_SETUP.md) for the one-time GitHub OAuth setup, server-side secret handling, draft/publish workflow, iPhone guide and the £0 cost report. Until it is configured, sign-in is explicitly disabled. The public blog continues to work without the CMS. All editor assets are pinned locally with MIT licenses and SHA-256 checksums; the public blog does not load them. No paid service or new npm dependency was added.
 
-Create one Markdown entry per language. Copy `templates/blog-post.md` to `src/content/blog/en--my-new-entry.md` (or `.mdx`), replace its text and publication date, and set `draft: false` when ready. For example:
+In `/admin/`, open **Articles → New Article**. Enter one permanent **Article ID**, then the shared date, category, tags, image, featured and hidden settings. Switch between the **Українська (UA)**, **English (EN)** and **日本語 (JP)** tabs to write the title, URL slug, description, Markdown story, image alt text and optional SEO text for each language. **Save and Publish apply once to the whole article**, through one GitHub workflow branch and pull request.
 
-```yaml
----
-title: "A little moment worth keeping"
-description: "A short, personal introduction to this entry."
-slug: my-new-entry
-translationKey: my-new-entry
-pubDate: 2026-10-17
-updatedDate:
-category: Diary
-tags:
-  - Diary
-  - Anime
-language: en
-featured: false
-draft: false
-image: /images/my-photo.webp
-imageAlt: "Describe the image for readers who cannot see it"
----
-```
+The Article ID is stored as `translationKey` and names the single file `src/content/articles/<id>.json`. It uses lowercase English letters, numbers and hyphens and cannot change after creation. Language slugs are separate from the Article ID and may differ; for example, one article can use `/uk/blog/tykhyi-ranok/`, `/en/blog/a-quiet-morning/` and `/ja/blog/shizukana-asa/`. Keep published slugs unchanged unless you add redirects.
 
-Write only this language version below the frontmatter. Supported new-entry languages are `uk`, `en` and `ja`. The example above becomes `/en/blog/my-new-entry/`. CMS filenames use `<language>--<slug>.md`, so two languages can share the same slug without overwriting a file. Public URLs use `/{language}/blog/{slug}/`; without an explicit `slug`, the filename is used with an initial `uk--`, `en--` or `ja--` removed. Avoid changing published slugs or filenames unless you also add a redirect.
+Every language is optional. A public translation needs nonblank **title, slug, description and body**. Partial work stays in the JSON record and can be saved; it is excluded from pages, search, RSS, sitemap and language alternates until complete. There is no required primary language, automatic translation or AI integration. Two articles cannot publish the same language/slug pair.
 
-For a translation, create another entry with its own language, title, description, body and optional SEO copy. Give translations of the same story the same `translationKey`. Slugs can differ: `en--a-quiet-morning.md` and `ja--shizukana-asa.md` can share `translationKey: quiet-morning`. The CMS requires a lowercase ASCII key for new entries. Each published language/key pair and language/URL pair must be unique; duplicate pairs stop the build. There is no automatic translation or AI integration.
+Shared tags are inherited when a translation has no `tags` field. Leave its **Language-specific tags** field untouched to keep inheritance. A saved local list overrides the shared list; an explicit `[]` means no tags for that language. This distinction is preserved when loading and saving existing articles.
 
-`image` and `imageAlt` are optional: omit them if there is no image. Images belong in `public/images/`; CMS uploads go to `public/images/blog/`. Dates use `YYYY-MM-DD`. A blank `updatedDate` is supported; add a date when revising a published entry. Optional `seoTitle` and `seoDescription` override post SEO/social metadata; empty values fall back to that language's main title and description.
+For GitHub editing without the CMS, copy [templates/article.json](templates/article.json) to `src/content/articles/a-little-moment.json`. Keep its filename equal to `translationKey`, replace the example text/date, and set `draft: false` when ready. The template starts hidden and contains all three language examples. Write Markdown inside each `body` JSON string; represent paragraph breaks with `\n\n` and escape literal quotation marks as `\"`. Use valid JSON without comments or trailing commas. The older `templates/blog-post.md` is retained for legacy reference and is not the new article template.
 
-Set `draft: true` to exclude a post from the public site, RSS, search, related posts, and archives. Future-dated posts are also excluded until a build runs after their publication date; there is no automatic scheduled publishing on a static host. The featured entry is the newest published post with `featured: true`, with the newest entry as a fallback. Mark posts as drafts before committing if they are not ready for public GitHub.
+The shared `image` is optional; CMS uploads remain in `public/images/blog/`. Each complete translation needs its own `imageAlt` when an image is set. Dates use `YYYY-MM-DD`, and a blank `updatedDate` is supported. Optional localized `seoTitle` and `seoDescription` fall back to that language's title and description.
+
+Set **Keep hidden even after Publish** (`draft: true`) to hide every language from public pages, RSS, search, related posts and archives. Deleting published articles through the CMS is disabled; ordinary unpublished workflow drafts can still be discarded. Future-dated articles also remain hidden until a build runs after their publication date; no scheduled service is added. The featured entry is the newest complete published translation with `featured: true`, with the newest entry in that language as a fallback. A public GitHub repository still exposes saved drafts and history; do not put private material there.
 
 Categories: `Diary`, `Anime`, `Cosplay`, `Gaming`, `Writing`, `Gothic Kawaii`, `University`, `Creative Writing`, `Fanfiction`. Tags are free text and must contain at least one letter or number. Each tag gets a static page automatically. Case and Unicode width variants share one tag URL. The main interest tags have pages even while empty. Category pages and the Diary/Anime/Cosplay/Gaming sections include both that category and posts tagged with the interest. Writing collects writing, creative writing, and fanfiction entries. The archive groups published entries by UTC year and month, newest first.
 
-Push the new file to GitHub and Cloudflare Pages rebuilds the site, including each language's search index, tags, related posts, RSS and sitemap.
+Publishing an article to `main` triggers the existing Cloudflare Pages build, including each language's search index, tags, related posts, RSS and sitemap. Implementation changes on this development branch require pull-request review before production.
 
 ## Language routes and existing articles
 
@@ -95,9 +82,9 @@ Canonical homepages are `/uk/`, `/en/` and `/ja/`. Blog, About, Writing, tags, c
 
 The root `/` serves Ukrainian content with canonical `/uk/`. On the root only, JavaScript can open the language previously selected by the reader; an explicit `/uk/`, `/en/` or `/ja/` URL always takes priority. Blocked storage and disabled JavaScript leave the page readable and the language links usable.
 
-Existing source articles are preserved byte-for-byte. `src/lib/content-languages.ts` links the three existing differently named versions of “A little world where you can be yourself” through the sidecar key `little-world-be-yourself`. The loader splits legacy `welcome.md` into three computed entries with translated metadata; it does not create copies or rewrite its frontmatter/body. Existing single-language Markdown posts containing multiple `<section lang>` blocks expose only their matching language section in public output; their raw CMS content stays unchanged.
+The five original Markdown files remain byte-for-byte preserved in `src/content/blog/`. Their editable content is consolidated into three JSON article records: `welcome`, `my-little-anime-world` and `little-world-be-yourself`. The migration manifest [cms/article-migration.json](cms/article-migration.json) records source hashes, language bodies, metadata and all seven existing localized article URLs. Matching JSON records take precedence over those archived sources, so legacy copies do not appear twice. Edit the JSON record through Articles rather than changing its archived Markdown source. The existing localized slugs and public content are retained.
 
-`multilingual` remains an editing option for legacy entries only. Additional legacy multilingual sources need explicit translated metadata in the loader or should be created as separate single-language entries; the build fails with a message rather than publishing incorrect metadata. Section extraction is the compatibility path for the existing Markdown files. New single-language `.md` and `.mdx` work normally; use the GitHub editor for MDX components/imports.
+The small language-tab widget reuses the pinned Decap ObjectControl, retaining its nested Markdown/media controls and validation. Native Decap `single_file` i18n uses a default locale and stores metadata beneath locale roots; this site's explicit shared-root settings and optional languages use a normal `translations` object instead. The 100 self-hosted vendor files are unchanged by this workflow change; no new dependency, service or subscription is required.
 
 The production build writes `dist/_redirects` with 301 redirects from old public routes to their localized destinations. Legacy HTML pages also provide a no-JavaScript fallback. Neither the verification tag nor CMS/OAuth routes are moved.
 
@@ -156,7 +143,7 @@ Previous/Next follow publication chronology within the current language. Up to t
 
 `npm test` checks publication boundaries, language/translation helpers, CMS validation, OAuth handling, Unicode tags, recommendation ranking and archive grouping. `npm run build` runs production checks, including localized metadata, JSON-LD, canonical origins and internal links. The commands below are verification instructions, not a claim that a particular deployment has passed them.
 
-Run `npm run test:content` serially, without another build or Astro dev/preview process using the same project. It records every original article's hash, creates uniquely named QA posts and its own image folder, builds only to gitignored `.qa-dist`, and serves that output on port 4399. It checks scoped search/RSS, translation switching with different slugs, pagination, related posts, UTC archives, SEO, image loading and draft/future exclusions, then removes only its own files and verifies original hashes in `finally`. Do not interrupt it. After a forced interruption, inspect leftover `qa-fixture-*` files before removing them; never delete an existing article by a broad pattern. The production checker refuses to publish QA content. Set `TMP` and `TEMP` to the project's `_tmp` folder for browser tests on this Windows workspace.
+Run fixture suites serially, without another build or Astro dev/preview process using the same project. `npm run test:unified` exercises the unified JSON model, while `npm run test:content` covers the legacy compatibility fixtures. These suites use isolated QA output and must not be interrupted or run concurrently with a production build. Only their explicitly created fixture files may be cleaned up; never delete real articles using a broad pattern. Set `TMP` and `TEMP` to the project's `_tmp` folder for browser tests on this Windows workspace.
 
 For browser verification, start `npm run preview -- --host 127.0.0.1` in one terminal, then:
 
@@ -170,7 +157,7 @@ npm run test:cms
 npm run test:cms:github
 ```
 
-The browser script checks responsive layouts, image loading, horizontal overflow, keyboard navigation, language selection, search, filters, clipboard fallback, feed XML, custom 404 and no-JavaScript reading. The accessibility script checks computed text contrast, heading order, labels, landmarks, alt attributes and duplicate IDs on representative pages. These checks do not replace manual screen-reader testing or Lighthouse measurement. CMS suites use in-memory or intercepted GitHub responses; they never publish or delete real articles and do not replace the owner's real OAuth/publishing check. Optional development-only tooling is never shipped to the browser. Screenshots and the accessibility report go to `test-results/` (gitignored).
+The browser script checks responsive layouts, image loading, horizontal overflow, keyboard navigation, language selection, search, filters, clipboard fallback, feed XML, custom 404 and no-JavaScript reading. The accessibility script checks computed text contrast, heading order, labels, landmarks, alt attributes and duplicate IDs on representative pages. CMS suites use in-memory or intercepted GitHub responses to check one-article save/publish and translation roundtrips; they never write real GitHub articles and do not replace the owner's real OAuth/publishing check. These checks do not replace manual screen-reader testing or Lighthouse measurement. Optional development-only tooling is never shipped to the browser. Screenshots and the accessibility report go to `test-results/` (gitignored).
 
 The example uses already installed Edge, without installing or downloading a browser. If you already have Playwright Chromium available, omit `TEST_BROWSER_CHANNEL` instead.
 

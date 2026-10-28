@@ -6,10 +6,11 @@ import ArchivePage from '../../views/ArchivePage.astro';
 import TagDirectory from '../../views/TagDirectory.astro';
 import ArticlePage from '../../views/ArticlePage.astro';
 import NotFoundPage from '../../views/NotFoundPage.astro';
+import LegacyRedirect from '../../layouts/LegacyRedirect.astro';
 import { locales } from '../../lib/i18n';
 import { posts, allTags, categories, slugify, type Post } from '../../lib/blog';
 import { entrySlug } from '../../lib/content-languages';
-import { sections } from '../../lib/routes';
+import { sections, localizedLegacyRedirects } from '../../lib/routes';
 export async function getStaticPaths() {
   const paths = [];
   for (const locale of locales) {
@@ -17,10 +18,11 @@ export async function getStaticPaths() {
     paths.push(...categories.map(value => ({ params: { locale, page: `categories/${slugify(value)}` }, props: { kind: 'category', value } })));
     paths.push(...(await allTags(locale)).map(value => ({ params: { locale, page: `tags/${slugify(value)}` }, props: { kind: 'tag', value } })));
     paths.push(...(await posts(locale)).map(post => ({ params: { locale, page: `blog/${entrySlug(post.id, post.data.slug)}` }, props: { kind: 'article', post } })));
+    paths.push(...(await localizedLegacyRedirects(locale)).map(alias => ({ params: { locale, page: alias.path }, props: { kind: 'redirect', value: alias.to } })));
   }
   return paths;
 }
 interface Props { kind: string; value?: string; post?: Post; }
 const { kind, value, post } = Astro.props;
 ---
-{kind === 'home' ? <HomePage /> : kind === 'article' ? <ArticlePage post={post!} /> : kind === 'archive' ? <ArchivePage /> : kind === 'tags' ? <TagDirectory /> : kind === '404' ? <NotFoundPage /> : kind === 'about' || kind === 'writing' ? <StaticPage kind={kind} /> : <CollectionPage kind={kind as 'blog' | 'diary' | 'anime' | 'cosplay' | 'gaming' | 'category' | 'tag'} value={value} />}
+{kind === 'redirect' ? <LegacyRedirect to={value!} /> : kind === 'home' ? <HomePage /> : kind === 'article' ? <ArticlePage post={post!} /> : kind === 'archive' ? <ArchivePage /> : kind === 'tags' ? <TagDirectory /> : kind === '404' ? <NotFoundPage /> : kind === 'about' || kind === 'writing' ? <StaticPage kind={kind} /> : <CollectionPage kind={kind as 'blog' | 'diary' | 'anime' | 'cosplay' | 'gaming' | 'category' | 'tag'} value={value} />}

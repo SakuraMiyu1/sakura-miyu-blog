@@ -8,6 +8,7 @@ const htmlFiles = files.filter(file => file.endsWith('.html'));
 const errors = [];
 const ids = new Map();
 const titles = new Set();
+const publishedUrls = [];
 const home = await readFile(path.join(root, 'index.html'), 'utf8');
 const origin = new URL(home.match(/rel="canonical" href="([^"]+)"/)?.[1] || 'https://invalid.test').origin;
 if (new URL(origin).hostname.endsWith('.pages.dev') && new URL(origin).hostname.split('.').length > 3) errors.push('Preview origin must not be used for canonical metadata.');
@@ -63,14 +64,15 @@ for (const locale of ['uk', 'en', 'ja']) {
   if (!rss.includes('<rss') || !rss.includes(`<language>${locale}</language>`)) errors.push(`Invalid ${locale} RSS`);
   if ([...rss.matchAll(/<dc:language>([^<]+)<\/dc:language>/g)].some(match => match[1] !== locale)) errors.push(`Mixed languages in ${locale} RSS`);
   const index = JSON.parse(await readFile(path.join(root, locale, 'search-index.json'), 'utf8'));
+  publishedUrls.push(...index.map(post => post.url));
   if (index.some(post => post.language !== locale || !post.url.startsWith(`/${locale}/`))) errors.push(`Mixed language search index: ${locale}`);
-  if (index.some(post => post.id.startsWith('qa-fixture-'))) errors.push('Temporary QA posts must never be published in the production build.');
+  if (index.some(post => /(^|\/)qa-fixture-/.test(post.id))) errors.push('Temporary QA posts must never be published in the production build.');
   const sourceHome = await readFile(path.join(root, locale, 'index.html'), 'utf8');
   if (!sourceHome.includes(`<html lang="${locale}"`)) errors.push(`Invalid document language: ${locale}`);
   if ([...sourceHome.matchAll(/name="google-site-verification"/g)].length !== 1) errors.push(`Verification meta tag count: ${locale}`);
 }
 const sitemap = await readFile(path.join(root, 'sitemap-0.xml'), 'utf8');
-if (!sitemap.includes('/uk/blog/welcome/') || !sitemap.includes('/en/blog/welcome/') || !sitemap.includes('/ja/blog/welcome/')) errors.push('Localized welcome posts missing from sitemap.');
+for (const url of publishedUrls) if (!sitemap.includes(`${origin}${url}`)) errors.push(`Published article missing from sitemap: ${url}`);
 if ([...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].some(match => !/^\/(uk|en|ja)\//.test(new URL(match[1]).pathname))) errors.push('Legacy aliases must not be in sitemap.');
 if (sitemap.includes('/404/')) errors.push('The 404 page must not be in the sitemap.');
 const robots = await readFile(path.join(root, 'robots.txt'), 'utf8');
