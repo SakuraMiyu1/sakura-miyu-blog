@@ -13,7 +13,12 @@
   },
   "socialImage": "/images/comics/two-queens-coming-soon-social.webp",
   "status": "coming-soon",
-  "genres": [{ "uk": "Фанкомікс", "en": "Fan comic", "ja": "ファンコミック" }, { "uk": "Горор", "en": "Horror", "ja": "ホラー" }],
+  "genres": [
+    { "uk": "Фанкомікс", "en": "Fan comic", "ja": "ファンコミック" },
+    { "uk": "Романтика", "en": "Romance", "ja": "ロマンス" },
+    { "uk": "Темне фентезі", "en": "Dark Fantasy", "ja": "ダークファンタジー" },
+    { "uk": "Горор", "en": "Horror", "ja": "ホラー" }
+  ],
   "approved": false,
   "publicationStatus": "draft",
   "announcement": { "approved": true, "published": true },
