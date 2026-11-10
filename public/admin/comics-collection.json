@@ -1,0 +1,105 @@
+{
+  "name": "comics",
+  "label": "Комікси · Comics · コミック",
+  "label_singular": "Комікс · Comic · コミック",
+  "folder": "src/data/comics",
+  "create": true,
+  "delete": false,
+  "extension": "json",
+  "format": "json",
+  "slug": "{{fields.id}}",
+  "identifier_field": "id",
+  "summary": "{{titles.en}} · {{status}} · {{publicationStatus}}",
+  "media_folder": "../../content/comics-media",
+  "public_folder": "/comics-media",
+  "editor": { "preview": true },
+  "fields": [
+    { "label": "Comic ID", "name": "id", "widget": "string", "pattern": ["^[a-z0-9]+(?:-[a-z0-9]+)*$", "Use lowercase English letters, numbers and hyphens."], "hint": "Permanent filename identity. It cannot change after creation." },
+    { "label": "URL slug", "name": "slug", "widget": "string", "pattern": ["^[a-z0-9]+(?:-[a-z0-9]+)*$", "Use lowercase English letters, numbers and hyphens."] },
+    { "label": "Titles · Назви · タイトル", "name": "titles", "widget": "translation-tabs", "fields": [
+      { "label": "Українська (UA)", "name": "uk", "widget": "string", "required": false },
+      { "label": "English (EN)", "name": "en", "widget": "string", "required": false },
+      { "label": "日本語 (JP)", "name": "ja", "widget": "string", "required": false }
+    ] },
+    { "label": "Descriptions · Описи · 説明", "name": "descriptions", "widget": "translation-tabs", "fields": [
+      { "label": "Українська (UA)", "name": "uk", "widget": "text", "required": false },
+      { "label": "English (EN)", "name": "en", "widget": "text", "required": false },
+      { "label": "日本語 (JP)", "name": "ja", "widget": "text", "required": false }
+    ] },
+    { "label": "Genres", "name": "genres", "widget": "list", "minimize_collapsed": true, "summary": "{{fields.en}}", "fields": [
+      { "label": "Українська", "name": "uk", "widget": "string" },
+      { "label": "English", "name": "en", "widget": "string" },
+      { "label": "日本語", "name": "ja", "widget": "string" }
+    ] },
+    { "label": "Cover", "name": "cover", "widget": "object", "collapsed": false, "fields": [
+      { "label": "Cover image", "name": "src", "widget": "image", "choose_url": false, "allow_multiple": false, "media_library": { "config": { "max_file_size": 5242880 } } },
+      { "label": "Image width (optional)", "name": "width", "widget": "number", "value_type": "int", "min": 1, "max": 2000, "required": false },
+      { "label": "Image height (optional)", "name": "height", "widget": "number", "value_type": "int", "min": 1, "max": 5000, "required": false },
+      { "label": "Alternative text", "name": "alt", "widget": "translation-tabs", "fields": [
+        { "label": "Українська (UA)", "name": "uk", "widget": "string", "required": false },
+        { "label": "English (EN)", "name": "en", "widget": "string", "required": false },
+        { "label": "日本語 (JP)", "name": "ja", "widget": "string", "required": false }
+      ] }
+    ] },
+    { "label": "Social image", "name": "socialImage", "widget": "image", "choose_url": false, "allow_multiple": false, "media_library": { "config": { "max_file_size": 5242880 } }, "hint": "Recommended 1200×630 WebP or AVIF." },
+    { "label": "Series status", "name": "status", "widget": "select", "default": "coming-soon", "options": [
+      { "label": "Coming Soon", "value": "coming-soon" },
+      { "label": "Ongoing", "value": "ongoing" },
+      { "label": "Completed", "value": "completed" }
+    ] },
+    { "label": "Publication mode", "name": "publicationStatus", "widget": "select", "default": "draft", "options": [
+      { "label": "Draft — чернетка", "value": "draft" },
+      { "label": "Preview — попередній перегляд", "value": "preview" },
+      { "label": "Published — опубліковано", "value": "published" }
+    ] },
+    { "label": "I confirm this series may be public", "name": "approved", "widget": "boolean", "default": false, "hint": "Published mode is ignored unless this explicit approval is ON." },
+    { "label": "Coming Soon announcement", "name": "announcement", "widget": "object", "collapsed": true, "fields": [
+      { "label": "Announcement approved", "name": "approved", "widget": "boolean", "default": false },
+      { "label": "Show announcement", "name": "published", "widget": "boolean", "default": false }
+    ] },
+    { "label": "Fan content source", "name": "fanContent", "widget": "hidden", "default": "dead-by-daylight" },
+    { "label": "Issues · Випуски · エピソード", "name": "chapters", "widget": "list", "default": [], "min": 0, "collapsed": true, "minimize_collapsed": true, "summary": "{{fields.order}} · {{fields.titles.en}} · {{fields.publicationStatus}}", "fields": [
+      { "label": "Issue ID", "name": "id", "widget": "string", "pattern": ["^[a-z0-9]+(?:-[a-z0-9]+)*$", "Use lowercase English letters, numbers and hyphens."] },
+      { "label": "URL slug", "name": "slug", "widget": "string", "pattern": ["^[a-z0-9]+(?:-[a-z0-9]+)*$", "Use lowercase English letters, numbers and hyphens."] },
+      { "label": "Issue number / order", "name": "order", "widget": "number", "value_type": "int", "min": 0 },
+      { "label": "Publication date", "name": "pubDate", "widget": "datetime", "required": false, "default": "", "format": "YYYY-MM-DD", "date_format": "DD/MM/YYYY", "time_format": false, "picker_utc": true },
+      { "label": "Titles · Назви · タイトル", "name": "titles", "widget": "translation-tabs", "fields": [
+        { "label": "Українська (UA)", "name": "uk", "widget": "string", "required": false },
+        { "label": "English (EN)", "name": "en", "widget": "string", "required": false },
+        { "label": "日本語 (JP)", "name": "ja", "widget": "string", "required": false }
+      ] },
+      { "label": "Publication mode", "name": "publicationStatus", "widget": "select", "default": "draft", "options": [
+        { "label": "Draft — чернетка", "value": "draft" },
+        { "label": "Preview — попередній перегляд", "value": "preview" },
+        { "label": "Published — опубліковано", "value": "published" }
+      ] },
+      { "label": "I confirm this issue may be public", "name": "approved", "widget": "boolean", "default": false },
+      { "label": "Pages · Сторінки · ページ", "name": "pages", "widget": "translation-tabs", "required": false, "hint": "Use the drag handle to reorder pages. Every translation must keep matching Page IDs in the same order.", "fields": [
+        { "label": "Українська (UA)", "name": "uk", "widget": "list", "required": false, "collapsed": true, "minimize_collapsed": true, "summary": "{{fields.id}} · {{fields.kind}}", "fields": [
+          { "label": "Page ID", "name": "id", "widget": "string", "pattern": ["^[a-z0-9]+(?:-[a-z0-9]+)*$", "Use cover, page-01, page-02 and so on."] },
+          { "label": "Kind", "name": "kind", "widget": "select", "options": [{ "label": "Cover", "value": "cover" }, { "label": "Page", "value": "page" }] },
+          { "label": "Image", "name": "src", "widget": "image", "choose_url": false, "allow_multiple": false, "media_library": { "config": { "max_file_size": 5242880 } } },
+            { "label": "Image width (optional)", "name": "width", "widget": "number", "value_type": "int", "min": 1, "max": 2000, "required": false },
+            { "label": "Image height (optional)", "name": "height", "widget": "number", "value_type": "int", "min": 1, "max": 5000, "required": false },
+          { "label": "Alternative text", "name": "alt", "widget": "string" }
+        ] },
+        { "label": "English (EN)", "name": "en", "widget": "list", "required": false, "collapsed": true, "minimize_collapsed": true, "summary": "{{fields.id}} · {{fields.kind}}", "fields": [
+          { "label": "Page ID", "name": "id", "widget": "string", "pattern": ["^[a-z0-9]+(?:-[a-z0-9]+)*$", "Use cover, page-01, page-02 and so on."] },
+          { "label": "Kind", "name": "kind", "widget": "select", "options": [{ "label": "Cover", "value": "cover" }, { "label": "Page", "value": "page" }] },
+          { "label": "Image", "name": "src", "widget": "image", "choose_url": false, "allow_multiple": false, "media_library": { "config": { "max_file_size": 5242880 } } },
+            { "label": "Image width (optional)", "name": "width", "widget": "number", "value_type": "int", "min": 1, "max": 2000, "required": false },
+            { "label": "Image height (optional)", "name": "height", "widget": "number", "value_type": "int", "min": 1, "max": 5000, "required": false },
+          { "label": "Alternative text", "name": "alt", "widget": "string" }
+        ] },
+        { "label": "日本語 (JP)", "name": "ja", "widget": "list", "required": false, "collapsed": true, "minimize_collapsed": true, "summary": "{{fields.id}} · {{fields.kind}}", "fields": [
+          { "label": "Page ID", "name": "id", "widget": "string", "pattern": ["^[a-z0-9]+(?:-[a-z0-9]+)*$", "Use cover, page-01, page-02 and so on."] },
+          { "label": "Kind", "name": "kind", "widget": "select", "options": [{ "label": "Cover", "value": "cover" }, { "label": "Page", "value": "page" }] },
+          { "label": "Image", "name": "src", "widget": "image", "choose_url": false, "allow_multiple": false, "media_library": { "config": { "max_file_size": 5242880 } } },
+            { "label": "Image width (optional)", "name": "width", "widget": "number", "value_type": "int", "min": 1, "max": 2000, "required": false },
+            { "label": "Image height (optional)", "name": "height", "widget": "number", "value_type": "int", "min": 1, "max": 5000, "required": false },
+          { "label": "Alternative text", "name": "alt", "widget": "string" }
+        ] }
+      ] }
+    ] }
+  ]
+}

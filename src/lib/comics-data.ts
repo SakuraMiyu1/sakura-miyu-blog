@@ -4,11 +4,11 @@ export const comicLocales = ['uk', 'en', 'ja'] as const;
 export type ComicLocale = typeof comicLocales[number];
 const id = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 const localizedText = z.object({ uk: z.string().trim().min(1), en: z.string().trim().min(1), ja: z.string().trim().min(1) }).strict();
-const imagePath = z.string().regex(/^\/(?:images\/comics|comics-demo-assets)\/[a-zA-Z0-9/_-]+\.(?:webp|avif)$/);
-const image = z.object({ src: imagePath, width: z.number().int().min(1).max(2000), height: z.number().int().min(1).max(5000) }).strict();
+const imagePath = z.string().regex(/^\/(?:images\/comics|comics-media|comics-demo-assets)\/[a-zA-Z0-9/_-]+\.(?:webp|avif)$/);
+const image = z.object({ src: imagePath, width: z.number().int().min(1).max(2000).optional(), height: z.number().int().min(1).max(5000).optional() }).strict();
 const page = image.extend({ id, kind: z.enum(['cover', 'page']), alt: z.string().trim().min(1) }).strict();
-const publication = { approved: z.boolean(), publicationStatus: z.enum(['draft', 'published']) };
-const chapter = z.object({ id, slug: id, order: z.number().int().min(0), titles: localizedText, ...publication, pages: z.object({ uk: z.array(page).optional(), en: z.array(page).optional(), ja: z.array(page).optional() }).strict() }).strict();
+const publication = { approved: z.boolean(), publicationStatus: z.enum(['draft', 'preview', 'published']) };
+const chapter = z.object({ id, slug: id, order: z.number().int().min(0), pubDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).or(z.literal('')).optional(), titles: localizedText, ...publication, pages: z.object({ uk: z.array(page).optional(), en: z.array(page).optional(), ja: z.array(page).optional() }).strict() }).strict();
 export const comicSchema = z.object({
   id, slug: id, titles: localizedText, descriptions: localizedText,
   cover: image.extend({ alt: localizedText }).strict(), socialImage: imagePath,
@@ -27,7 +27,7 @@ export const comicSchema = z.object({
       if (!pages?.length) continue;
       for (const page of pages) {
         const prefix = comic.demo ? `/comics-demo-assets/${locale}/${issue.id}/` : `/images/comics/${comic.id}/${issue.id}/${locale}/`;
-        if (!page.src.startsWith(prefix) || usedImages.has(page.src)) ctx.addIssue({ code: 'custom', path: ['chapters', index, 'pages', locale], message: 'Each language needs its own prepared images in its chapter/language directory.' });
+        if ((!page.src.startsWith(prefix) && !page.src.startsWith('/comics-media/')) || usedImages.has(page.src)) ctx.addIssue({ code: 'custom', path: ['chapters', index, 'pages', locale], message: 'Each language needs its own prepared image.' });
         usedImages.add(page.src);
       }
       if (pages[0].kind !== 'cover' || pages.slice(1).some(page => page.kind === 'cover') || new Set(pages.map(page => page.id)).size !== pages.length) ctx.addIssue({ code: 'custom', path: ['chapters', index, 'pages', locale], message: 'Put one cover first and use unique stable page IDs.' });
@@ -46,6 +46,12 @@ export const publishedChapters = (comic: Comic) => isPublicComic(comic) ? comic.
 export const chapterLanguages = (chapter: ComicChapter) => comicLocales.filter(locale => chapter.pages[locale]?.length);
 export const comicPath = (locale: ComicLocale, comic?: Comic, chapter?: ComicChapter) => `/${locale}/comics/${comic ? comic.slug + '/' : ''}${chapter ? chapter.slug + '/' : ''}`;
 export const chapterAlternates = (comic: Comic, chapter: ComicChapter) => Object.fromEntries(chapterLanguages(chapter).map(locale => [locale, comicPath(locale, comic, chapter)]));
+export function publicComicAssets(comic: Comic) {
+  if (comic.demo) return [];
+  const assets = isListedComic(comic) ? [comic.cover.src, comic.socialImage] : [];
+  for (const chapter of publishedChapters(comic)) for (const locale of comicLocales) for (const page of chapter.pages[locale] || []) assets.push(page.src);
+  return [...new Set(assets)];
+}
 export function comicIndexablePaths(comics: Comic[]) {
   return comicLocales.flatMap(locale => [`/${locale}/comics/`, ...comics.filter(comic => isListedComic(comic) && !comic.demo).flatMap(comic => [comicPath(locale, comic), ...publishedChapters(comic).filter(chapter => chapter.pages[locale]?.length).map(chapter => comicPath(locale, comic, chapter))])]);
 }

@@ -6,7 +6,7 @@ import { runInNewContext } from 'node:vm';
 const source = await readFile('public/admin/editor.js', 'utf8');
 const handlers = {};
 const widgets = {};
-let preview;
+const previews = {};
 const h = (type, props, ...children) => ({ type, props: props || {}, children });
 class Data {
   constructor(value) { this.value = value; }
@@ -25,7 +25,7 @@ const CMS = {
   getWidget: name => name === 'object' ? baseWidget : widgets[name],
   registerWidget: widget => { widgets[widget.name] = widget; },
   registerPreviewStyle() {},
-  registerPreviewTemplate: (_name, callback) => { preview = callback; },
+  registerPreviewTemplate: (name, callback) => { previews[name] = callback; },
   registerEventListener: event => { handlers[event.name] = event.handler; }
 };
 runInNewContext(source, { window: { CMS, h } });
@@ -33,6 +33,15 @@ const entry = (data, { slug, newRecord = true } = {}) => ({ get: key => ({ data:
 const complete = overrides => ({ title: 'A dream', slug: 'a-dream', description: 'A diary thought', body: 'A little story.', ...overrides });
 const article = overrides => ({ translationKey: 'a-dream', pubDate: '2026-10-17', updatedDate: '', category: 'Diary', tags: ['Anime'], featured: false, draft: false, translations: { uk: complete() }, ...overrides });
 const save = (data, options) => handlers.preSave({ entry: entry(data, options) });
+const saveComic = (data, options) => handlers.preSave({ entry: entry(data, options), collection: new Data({ name: 'comics' }) });
+const publishComic = (data, options) => handlers.prePublish({ entry: entry(data, options), collection: new Data({ name: 'comics' }) });
+const localized = value => ({ uk: value + ' UK', en: value + ' EN', ja: value + ' JA' });
+const comic = overrides => ({
+  id: 'mist-story', slug: 'mist-story', titles: localized('Title'), descriptions: localized('Description'), genres: [localized('Fantasy')],
+  cover: { src: '/comics-media/cover.webp', width: 1600, height: 2400, alt: localized('Cover') }, socialImage: '/comics-media/social.webp',
+  status: 'coming-soon', publicationStatus: 'draft', approved: false, announcement: { approved: false, published: false }, fanContent: 'dead-by-daylight', chapters: [], ...overrides
+});
+const page = (id, kind, locale) => ({ id, kind, src: `/comics-media/${locale}-${id}.webp`, width: 1600, height: 2400, alt: `${locale} ${id}` });
 
 test('One article retains all language versions and shared settings through a JSON roundtrip', () => {
   const input = article({ image: '/images/blog/ribbon.webp', featured: true, translations: { uk: complete({ title: 'Мрія', body: 'Я зберегла маленьку мрію.', imageAlt: 'Рожева стрічка' }), en: complete({ imageAlt: 'A pink ribbon', tags: [] }), ja: complete({ title: '小さな夢', body: '日記の小さな物語。', imageAlt: 'ピンクのリボン', tags: ['物語'] }) } });
@@ -116,7 +125,7 @@ test('Preview shows complete language versions and resolves nested body widgets 
   const localizedFields = ['uk', 'en', 'ja'].map(name => new Data({ name, fields: [new Data({ name: 'body' })] }));
   const input = article({ image: '/images/test.webp', translations: { en: complete({ imageAlt: 'A blossom' }), ja: complete({ title: 'Not complete yet', body: ' \n ' }) } });
   const bodies = [];
-  const rendered = preview({ entry: entry(input), fields: [new Data({ name: 'translations', fields: localizedFields })], widgetFor: (name, _fields, value) => { bodies.push({ name, value }); return h('markdown', {}, value.body); }, getAsset: () => 'blob:test-image' });
+  const rendered = previews.blog({ entry: entry(input), fields: [new Data({ name: 'translations', fields: localizedFields })], widgetFor: (name, _fields, value) => { bodies.push({ name, value }); return h('markdown', {}, value.body); }, getAsset: () => 'blob:test-image' });
   const section = rendered.children.find(child => child?.type === 'section');
   assert.equal(section.props.lang, 'en');
   assert.equal(rendered.children.filter(child => child?.type === 'section').length, 1);
@@ -124,4 +133,42 @@ test('Preview shows complete language versions and resolves nested body widgets 
   assert.equal(bodies[0].name, 'body');
   assert.equal(bodies[0].value.body, 'A little story.');
   assert.equal(section.children.find(child => child?.type === 'img').props.src, 'blob:test-image');
+});
+
+test('Comic drafts, preview mode and multilingual metadata save without publishing issues', () => {
+  assert.doesNotThrow(() => saveComic(comic({ titles: { uk: 'Чернетка' }, descriptions: {}, cover: undefined, socialImage: undefined })));
+  assert.deepEqual(saveComic(comic({ chapters: [{ publicationStatus: 'draft', approved: false, pages: {}, titles: {} }] })).get('chapters'), []);
+  assert.equal(saveComic(comic({ publicationStatus: 'preview' })).get('publicationStatus'), 'preview');
+  assert.throws(() => saveComic(comic({ publicationStatus: 'published' })), /explicit series publication confirmation/);
+  assert.doesNotThrow(() => saveComic(comic({ publicationStatus: 'published', approved: true })));
+});
+
+test('Published issues require approval, pages and matching multilingual page order', () => {
+  const issue = { id: 'issue-01', slug: 'issue-01', order: 1, pubDate: '2026-11-10', titles: localized('Issue'), publicationStatus: 'published', approved: true, pages: { uk: [page('cover', 'cover', 'uk'), page('page-01', 'page', 'uk')] } };
+  assert.doesNotThrow(() => saveComic(comic({ chapters: [issue] })));
+  const intrinsicSize = { ...page('cover', 'cover', 'uk') };
+  delete intrinsicSize.width;
+  delete intrinsicSize.height;
+  assert.doesNotThrow(() => saveComic(comic({ chapters: [{ ...issue, pages: { uk: [intrinsicSize] } }] })));
+  assert.throws(() => saveComic(comic({ chapters: [{ ...issue, pages: { uk: [{ ...intrinsicSize, width: 1600 }] } }] })), /both image dimensions/);
+  assert.throws(() => saveComic(comic({ chapters: [{ ...issue, approved: false }] })), /explicit publication confirmation/);
+  assert.throws(() => saveComic(comic({ chapters: [{ ...issue, pages: {} }] })), /cannot be empty/);
+  assert.throws(() => saveComic(comic({ chapters: [{ ...issue, pages: { uk: issue.pages.uk, en: [page('cover', 'cover', 'en'), page('page-02', 'page', 'en')] } }] })), /matching Page IDs/);
+  assert.throws(() => saveComic(comic({ chapters: [{ ...issue, pages: { uk: [page('page-01', 'page', 'uk')] } }] })), /one cover first/);
+});
+
+test('Publishing a comic record to main requires complete UA, EN and JP metadata', () => {
+  assert.throws(() => publishComic(comic({ titles: { uk: 'Лише українська' } })), /Comic titles/);
+  assert.throws(() => publishComic(comic({ genres: [] })), /at least one genre/);
+  assert.doesNotThrow(() => publishComic(comic()));
+});
+
+test('Comic preview renders every language and uploaded issue page', () => {
+  const issue = { id: 'issue-01', slug: 'issue-01', order: 1, titles: localized('Issue'), publicationStatus: 'preview', approved: false, pages: { en: [page('cover', 'cover', 'en')] } };
+  const rendered = previews.comics({ entry: entry(comic({ chapters: [issue] })), getAsset: asset => `blob:${asset}` });
+  assert.equal(rendered.props.className, 'comic-preview');
+  assert.equal(rendered.children.filter(child => child?.type === 'section').length, 3);
+  const english = rendered.children.filter(child => child?.type === 'section')[1];
+  assert.ok(JSON.stringify(english).includes('blob:/comics-media/en-cover.webp'));
+  assert.ok(JSON.stringify(english).includes('preview'));
 });

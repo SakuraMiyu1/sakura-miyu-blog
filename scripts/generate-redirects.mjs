@@ -1,7 +1,10 @@
 import { readFile, readdir, writeFile } from 'node:fs/promises';
+import { realpathSync } from 'node:fs';
 import path from 'node:path';
-const root = path.resolve(process.argv[2] || 'dist');
-if (!root.startsWith(process.cwd() + path.sep)) throw new Error('Build output must stay inside the project.');
+const projectRoot = realpathSync(process.cwd());
+const root = realpathSync(path.resolve(process.argv[2] || 'dist'));
+const relativeRoot = path.relative(projectRoot, root);
+if (relativeRoot.startsWith('..' + path.sep) || path.isAbsolute(relativeRoot)) throw new Error('Build output must stay inside the project.');
 const rules = [];
 async function scan(dir) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {

@@ -15,13 +15,14 @@
     "test:unified": "node scripts/test-unified-content.mjs",
     "test:cms": "node scripts/test-cms-browser.mjs",
     "test:cms:github": "node scripts/test-cms-github.mjs",
+    "test:cms:comics": "node scripts/test-comics-cms.mjs",
     "test:a11y": "node scripts/audit-accessibility.mjs",
     "assets": "node scripts/prepare-assets.mjs",
     "test:browser": "node scripts/test-browser.mjs",
     "test:comics": "node scripts/test-comics.mjs"
   },
   "dependencies": {
-    "astro": "^7.4.0",
+    "astro": "7.4.1",
     "@astrojs/mdx": "^8.1.0",
     "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.7.4"

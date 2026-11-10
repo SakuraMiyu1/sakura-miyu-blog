@@ -51,7 +51,7 @@ class TranslationTabsControl extends objectWidget.control {
 
   render() {
     return h('div', { className: 'sakura-translations' },
-      h('div', { role: 'tablist', 'aria-label': 'Article language', 'aria-orientation': 'horizontal', className: 'sakura-language-tabs' },
+      h('div', { role: 'tablist', 'aria-label': `${this.props.field.get('label') || 'Content'} language`, 'aria-orientation': 'horizontal', className: 'sakura-language-tabs' },
         ...languages.map(locale => h('button', {
           key: locale,
           id: `${this.props.forID}-tab-${locale}`,
@@ -99,6 +99,38 @@ CMS.registerPreviewTemplate('blog', ({ entry, fields, fieldsMetaData, widgetFor,
   );
 });
 
+const arrayValue = value => value?.toArray ? value.toArray() : Array.isArray(value) ? value : [];
+const plainText = (value, locale) => fieldValue(value, locale) || '';
+
+CMS.registerPreviewTemplate('comics', ({ entry, getAsset }) => {
+  const data = entry.get('data');
+  const titles = data.get('titles');
+  const descriptions = data.get('descriptions');
+  const cover = data.get('cover');
+  const chapters = arrayValue(data.get('chapters'));
+  return h('article', { className: 'comic-preview' },
+    h('p', null, `Sakura Miyu Comics · ${data.get('status') || 'coming-soon'} · ${data.get('publicationStatus') || 'draft'}`),
+    cover && fieldValue(cover, 'src') ? h('img', { src: String(getAsset(fieldValue(cover, 'src'))), alt: plainText(fieldValue(cover, 'alt'), 'uk') }) : null,
+    ...languages.map(locale => h('section', { key: locale, lang: locale },
+      h('p', null, languageNames[locale]),
+      h('h1', null, plainText(titles, locale) || 'Untitled'),
+      h('p', null, plainText(descriptions, locale) || 'Description not added yet.'),
+      h('h2', null, 'Issues'),
+      chapters.length ? h('ol', null, ...chapters.map(chapter => {
+        const pages = arrayValue(fieldValue(fieldValue(chapter, 'pages'), locale));
+        return h('li', { key: fieldValue(chapter, 'id') },
+          h('strong', null, plainText(fieldValue(chapter, 'titles'), locale) || fieldValue(chapter, 'id') || 'Untitled issue'),
+          ` · ${fieldValue(chapter, 'publicationStatus') || 'draft'} · ${pages.length} page(s)`,
+          pages.length ? h('div', { className: 'comic-preview-pages' }, ...pages.map(page => h('figure', { key: fieldValue(page, 'id') },
+            h('img', { src: String(getAsset(fieldValue(page, 'src'))), alt: fieldValue(page, 'alt') || '' }),
+            h('figcaption', null, fieldValue(page, 'id'))
+          ))) : null
+        );
+      })) : h('p', null, 'No issues yet.')
+    ))
+  );
+});
+
 function validDate(value) {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z)?$/.test(value)) return false;
   const day = value.slice(0, 10);
@@ -112,9 +144,14 @@ function validateTags(value, label) {
   if (!Array.isArray(tags) || tags.some(tag => typeof tag !== 'string' || !/[\p{L}\p{N}]/u.test(tag))) throw new Error(`${label}: each tag must contain a letter or number.`);
 }
 
-CMS.registerEventListener({
-  name: 'preSave',
-  handler: ({ entry }) => {
+function collectionName(collection, data) {
+  if (collection?.get) return collection.get('name');
+  if (collection?.name) return collection.name;
+  const hasArticleId = data?.has ? data.has('translationKey') : Boolean(data?.value && Object.prototype.hasOwnProperty.call(data.value, 'translationKey'));
+  return hasArticleId ? 'blog' : 'comics';
+}
+
+function validateArticle(entry) {
     const data = entry.get('data');
     const articleId = data.get('translationKey');
     if (typeof articleId !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(articleId)) throw new Error('Enter a unique Article ID using lowercase English letters, numbers and hyphens.');
@@ -143,5 +180,91 @@ CMS.registerEventListener({
       if (complete && image && !hasText(fieldValue(translation, 'imageAlt'))) throw new Error(`${languageNames[locale]}: please add alternative text for the featured image.`);
     }
     return data;
+}
+
+const safeId = value => typeof value === 'string' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
+const safeComicAsset = value => typeof value === 'string' && /^\/(?:images\/comics|comics-media)\/[a-zA-Z0-9/_-]+\.(?:webp|avif)$/.test(value);
+
+function validateLocalized(value, label, complete) {
+  const missing = [];
+  for (const locale of languages) {
+    const text = fieldValue(value, locale);
+    if (text !== undefined && text !== null && typeof text !== 'string') throw new Error(`${label} · ${languageNames[locale]} must be text.`);
+    if (!hasText(text)) missing.push(locale);
   }
-});
+  if (complete && missing.length) throw new Error(`${label}: complete UA, EN and JP before publishing to main.`);
+  return missing;
+}
+
+function validateComic(entry, publishing = false) {
+  const data = entry.get('data');
+  const comicId = data.get('id');
+  if (!safeId(comicId)) throw new Error('Enter a unique Comic ID using lowercase English letters, numbers and hyphens.');
+  if (!entry.get('newRecord') && entry.get('slug') && comicId !== entry.get('slug')) throw new Error('The Comic ID cannot change after creation.');
+  if (!safeId(data.get('slug'))) throw new Error('Use lowercase English letters, numbers and hyphens for the comic URL slug.');
+  validateLocalized(data.get('titles'), 'Comic titles', publishing);
+  validateLocalized(data.get('descriptions'), 'Comic descriptions', publishing);
+  const cover = data.get('cover');
+  if (publishing && (!cover || !safeComicAsset(fieldValue(cover, 'src')))) throw new Error('Choose an optimized comic cover before publishing to main.');
+  if (cover && fieldValue(cover, 'src') && !safeComicAsset(fieldValue(cover, 'src'))) throw new Error('Comic cover must be an uploaded WebP or AVIF image.');
+  if (cover) validateLocalized(fieldValue(cover, 'alt'), 'Cover alternative text', publishing);
+  const socialImage = data.get('socialImage');
+  if (publishing && !safeComicAsset(socialImage)) throw new Error('Choose an optimized social image before publishing to main.');
+  if (socialImage && !safeComicAsset(socialImage)) throw new Error('Social image must be an uploaded WebP or AVIF image.');
+  const mode = data.get('publicationStatus') || 'draft';
+  if (!['draft', 'preview', 'published'].includes(mode)) throw new Error('Choose Draft, Preview or Published for the comic.');
+  if (mode === 'published' && data.get('approved') !== true) throw new Error('Turn on the explicit series publication confirmation before choosing Published.');
+  const genres = arrayValue(data.get('genres'));
+  if (publishing && !genres.length) throw new Error('Add at least one genre before publishing to main.');
+  for (const genre of genres) validateLocalized(genre, 'Genre', publishing);
+  const chapterIsEmpty = chapter => !hasText(fieldValue(chapter, 'id')) && !hasText(fieldValue(chapter, 'slug')) && !languages.some(locale => hasText(fieldValue(fieldValue(chapter, 'titles'), locale))) && !languages.some(locale => arrayValue(fieldValue(fieldValue(chapter, 'pages'), locale)).length);
+  const originalChapters = arrayValue(data.get('chapters'));
+  const chapters = originalChapters.filter(chapter => !chapterIsEmpty(chapter));
+  const result = chapters.length === originalChapters.length ? data : data.set('chapters', data.get('chapters')?.filter ? data.get('chapters').filter(chapter => !chapterIsEmpty(chapter)) : chapters);
+  const ids = new Set();
+  const slugs = new Set();
+  const orders = new Set();
+  for (const chapter of chapters) {
+    const chapterId = fieldValue(chapter, 'id');
+    const slug = fieldValue(chapter, 'slug');
+    const order = fieldValue(chapter, 'order');
+    if (!safeId(chapterId) || !safeId(slug)) throw new Error('Every issue needs a lowercase Issue ID and URL slug.');
+    if (!Number.isInteger(order) || order < 0 || ids.has(chapterId) || slugs.has(slug) || orders.has(order)) throw new Error('Issue IDs, URL slugs and order numbers must be unique.');
+    ids.add(chapterId); slugs.add(slug); orders.add(order);
+    validateLocalized(fieldValue(chapter, 'titles'), `Issue ${chapterId} titles`, publishing);
+    const pubDate = fieldValue(chapter, 'pubDate');
+    if (pubDate && !validDate(pubDate)) throw new Error(`Issue ${chapterId}: choose a valid publication date.`);
+    const chapterMode = fieldValue(chapter, 'publicationStatus') || 'draft';
+    if (!['draft', 'preview', 'published'].includes(chapterMode)) throw new Error(`Issue ${chapterId}: choose Draft, Preview or Published.`);
+    if (chapterMode === 'published' && fieldValue(chapter, 'approved') !== true) throw new Error(`Issue ${chapterId}: turn on its explicit publication confirmation before choosing Published.`);
+    const pagesByLanguage = fieldValue(chapter, 'pages');
+    let reference = null;
+    const missing = [];
+    for (const locale of languages) {
+      const pages = arrayValue(fieldValue(pagesByLanguage, locale));
+      if (!pages.length) { missing.push(locale); continue; }
+      const pageIds = [];
+      const assets = new Set();
+      for (const [index, page] of pages.entries()) {
+        const pageId = fieldValue(page, 'id');
+        const kind = fieldValue(page, 'kind');
+        const src = fieldValue(page, 'src');
+        if (!safeId(pageId) || !['cover', 'page'].includes(kind) || !safeComicAsset(src) || !hasText(fieldValue(page, 'alt'))) throw new Error(`Issue ${chapterId} · ${languageNames[locale]}: every page needs a safe ID, image, kind and alternative text.`);
+        if ((index === 0 && kind !== 'cover') || (index > 0 && kind === 'cover') || pageIds.includes(pageId) || assets.has(src)) throw new Error(`Issue ${chapterId} · ${languageNames[locale]}: put one cover first and keep page IDs and images unique.`);
+        const width = fieldValue(page, 'width');
+        const height = fieldValue(page, 'height');
+        if ((width != null || height != null) && (!Number.isInteger(width) || width < 1 || width > 2000 || !Number.isInteger(height) || height < 1 || height > 5000)) throw new Error(`Issue ${chapterId} · ${languageNames[locale]}: enter both image dimensions or leave both empty.`);
+        pageIds.push(pageId); assets.add(src);
+      }
+      const signature = pageIds.join('|');
+      if (reference === null) reference = signature;
+      else if (signature !== reference) throw new Error(`Issue ${chapterId}: every available translation must keep matching Page IDs in the same order.`);
+    }
+    if (chapterMode === 'published' && reference === null) throw new Error(`Issue ${chapterId}: a Published issue cannot be empty.`);
+    if (publishing && chapterMode === 'published' && missing.length && typeof window.confirm === 'function' && !window.confirm(`Issue ${chapterId} has no ${missing.map(locale => languageNames[locale]).join(', ')} pages. Publish the available languages anyway?`)) throw new Error(`Issue ${chapterId}: publication cancelled because a translation is missing.`);
+  }
+  return result;
+}
+
+CMS.registerEventListener({ name: 'preSave', handler: ({ entry, collection }) => collectionName(collection, entry.get('data')) === 'comics' ? validateComic(entry) : validateArticle(entry) });
+CMS.registerEventListener({ name: 'prePublish', handler: ({ entry, collection }) => collectionName(collection, entry.get('data')) === 'comics' ? validateComic(entry, true) : entry.get('data') });

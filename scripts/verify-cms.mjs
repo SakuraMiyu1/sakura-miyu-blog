@@ -12,8 +12,8 @@ assert.equal(config.publish_mode, 'editorial_workflow');
 assert.equal(config.backend.base_url, 'https://sakura-miyu-blog.pages.dev');
 assert.equal(config.local_backend, undefined);
 assert.equal(config.backend.open_authoring, undefined);
-const collection = config.collections[0];
-assert.equal(config.collections.length, 1, 'One collection lists one record per article');
+const collection = config.collections.find(collection => collection.name === 'blog');
+assert.equal(config.collections.length, 1, 'The runtime appends the Comics collection without duplicating the article configuration');
 assert.equal(collection.folder, 'src/content/articles');
 assert.equal(collection.extension, 'json');
 assert.equal(collection.format, 'json');
@@ -55,6 +55,28 @@ assert.equal(collection.fields.find(field => field.name === 'draft').default, fa
 assert.equal(collection.fields.find(field => field.name === 'image').choose_url, false);
 assert.equal(config.media_folder, 'public/images/blog');
 assert.ok(!config.media_library?.name, 'No external media provider');
+const comics = JSON.parse(await readFile('public/admin/comics-collection.json', 'utf8'));
+assert.equal(comics.name, 'comics');
+assert.equal(comics.folder, 'src/data/comics');
+assert.equal(comics.slug, '{{fields.id}}');
+assert.equal(comics.identifier_field, 'id');
+assert.equal(comics.delete, false);
+assert.equal(comics.media_folder, '../../content/comics-media');
+assert.equal(comics.public_folder, '/comics-media');
+assert.deepEqual(comics.fields.map(field => field.name), ['id', 'slug', 'titles', 'descriptions', 'genres', 'cover', 'socialImage', 'status', 'publicationStatus', 'approved', 'announcement', 'fanContent', 'chapters']);
+for (const name of ['titles', 'descriptions']) assert.deepEqual(comics.fields.find(field => field.name === name).fields.map(field => field.name), ['uk', 'en', 'ja']);
+const chapters = comics.fields.find(field => field.name === 'chapters');
+assert.equal(chapters.widget, 'list');
+assert.deepEqual(chapters.fields.map(field => field.name), ['id', 'slug', 'order', 'pubDate', 'titles', 'publicationStatus', 'approved', 'pages']);
+const pages = chapters.fields.find(field => field.name === 'pages');
+assert.equal(pages.widget, 'translation-tabs');
+assert.deepEqual(pages.fields.map(field => field.name), ['uk', 'en', 'ja']);
+for (const locale of pages.fields) {
+  assert.equal(locale.widget, 'list');
+  assert.deepEqual(locale.fields.map(field => field.name), ['id', 'kind', 'src', 'width', 'height', 'alt']);
+  assert.equal(locale.fields.find(field => field.name === 'src').widget, 'image');
+}
+for (const field of [comics.fields.find(field => field.name === 'publicationStatus'), chapters.fields.find(field => field.name === 'publicationStatus')]) assert.deepEqual(field.options.map(option => option.value), ['draft', 'preview', 'published']);
 const routes = JSON.parse(await readFile('public/_routes.json', 'utf8'));
 assert.deepEqual(routes.include, ['/api/auth', '/api/callback', '/api/cms-status']);
 const manifest = JSON.parse(await readFile('cms/vendor-manifest.json', 'utf8'));
@@ -75,8 +97,8 @@ for (const [name, expected] of Object.entries(manifest.files)) {
   assert.equal(createHash('sha256').update(content).digest('hex'), expected.sha256, `Vendor checksum: ${name}`);
   assert.ok(content.length < 25 * 1024 * 1024, 'Cloudflare Pages Free asset size limit');
 }
-for (const filename of ['public/admin/start.js', 'public/admin/editor.js', 'public/admin/config.yml', 'public/admin/index.html']) {
+for (const filename of ['public/admin/start.js', 'public/admin/editor.js', 'public/admin/config.yml', 'public/admin/comics-collection.json', 'public/admin/index.html']) {
   const content = await readFile(filename, 'utf8');
   assert.ok(!/gh[pousr]_[A-Za-z0-9]{20,}|client_secret\s*[=:]\s*["'][^"']+["']/.test(content), `No credentials in ${filename}`);
 }
-console.log(`CMS configuration verified: one JSON article with shared settings and three optional language tabs, unchanged dates, matching Astro categories, editorial workflow, repository media, exact function routes and ${vendor.length} pinned local vendor assets. No paid integrations or frontend secrets.`);
+console.log(`CMS configuration verified: unified multilingual Articles and Comics collections, nested issues and three page-language tabs, source-gated optimized comic media, editorial workflow, exact function routes and ${vendor.length} pinned local vendor assets. No paid integrations or frontend secrets.`);
