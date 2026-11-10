@@ -6,7 +6,7 @@ interface Props { alternates?: Partial<Record<Locale, string>>; }
 const { alternates } = Astro.props;
 const pathname = Astro.url.pathname;
 const locale = localeFromPath(pathname);
-const links = [[t(locale, 'home'), ''], [t(locale, 'diary'), 'diary'], [topicLabel('Cosplay', locale), 'cosplay'], [topicLabel('Anime', locale), 'anime'], [topicLabel('Gaming', locale), 'gaming'], [t(locale, 'writing'), 'writing'], [t(locale, 'about'), 'about']];
+const links = [[t(locale, 'home'), ''], [t(locale, 'diary'), 'diary'], [topicLabel('Cosplay', locale), 'cosplay'], [topicLabel('Anime', locale), 'anime'], [topicLabel('Gaming', locale), 'gaming'], [t(locale, 'writing'), 'writing'], [t(locale, 'comics'), 'comics'], [t(locale, 'about'), 'about']];
 ---
 <div class="topline"><div class="shell topline-inner"><span><span aria-hidden="true">✦</span> {t(locale, 'topline')}</span><a href={localePath(locale, 'rss.xml')}><Icon name="rss" size={13} /> {t(locale, 'rss')}</a></div></div>
 <header class="site-header shell">

@@ -1,0 +1,38 @@
+---
+import { comicLocales, comicPath, publishedChapters, chapterLanguages, type Comic, type ComicChapter, type ComicLocale } from '../lib/comics-data';
+import { comicText as text } from '../lib/comics-i18n';
+interface Props { comic: Comic; chapter: ComicChapter; locale: ComicLocale; }
+const { comic, chapter, locale } = Astro.props;
+const pages = chapter.pages[locale] || [];
+const languages = chapterLanguages(chapter);
+const reference = chapter.pages[languages[0]] || [];
+const chapters = publishedChapters(comic);
+const position = chapters.findIndex(value => value.id === chapter.id);
+const names = { uk: 'Українська', en: 'English', ja: '日本語' };
+---
+<section class="comic-reader" data-comic-reader data-comic-id={comic.id} data-chapter-id={chapter.id} data-page-ids={JSON.stringify(reference.map(page => page.id))} data-counter-label={text(locale, 'counter')}>
+  <nav class="reader-languages" aria-label={text(locale, 'language')}>{comicLocales.map(language => <a data-reader-language lang={language} href={comicPath(language, comic, chapter)} aria-current={language === locale ? 'true' : undefined}>{names[language]}{!chapter.pages[language]?.length ? ' · —' : ''}</a>)}</nav>
+  {pages.length ? <>
+    <div class="reader-controls" data-reader-controls hidden>
+      <button class="button button-outline" type="button" data-reader-previous>{text(locale, 'previous')}</button>
+      <output class="reader-counter" data-reader-counter aria-live="polite" aria-atomic="true">{text(locale, 'counter').replace('{current}', '1').replace('{total}', String(pages.length))}</output>
+      <button class="button button-outline" type="button" data-reader-next>{text(locale, 'next')}</button>
+      <div class="reader-zoom"><button type="button" data-zoom-out aria-label={text(locale, 'zoomOut')}>−</button><label>{text(locale, 'zoom')} <select data-reader-zoom>{[100, 125, 150, 175, 200].map(value => <option value={value}>{value}%</option>)}</select></label><button type="button" data-zoom-in aria-label={text(locale, 'zoomIn')}>+</button><button type="button" data-zoom-fit>{text(locale, 'fit')}</button></div>
+    </div>
+    <p class="reader-help">{text(locale, 'help')}</p>
+    <noscript><p class="comic-paper">{text(locale, 'noScript')}</p></noscript>
+    <details class="reader-index"><summary>{text(locale, 'index')}</summary><ol>{pages.map((page, index) => <li><a data-reader-jump href={`#comic-${page.id}`}>{page.kind === 'cover' ? text(locale, 'cover') : `${text(locale, 'page')} ${index + 1}`}</a></li>)}</ol></details>
+    <div class="reader-stage" data-reader-stage tabindex="0" role="region" aria-label={text(locale, 'stage')} dir="ltr">
+      {pages.map((page, index) => <figure class="comic-figure" id={`comic-${page.id}`} data-reader-page={page.id}><img src={page.src} alt={page.alt} width={page.width} height={page.height} loading={index === 0 ? 'eager' : 'lazy'} decoding="async" /><figcaption>{page.kind === 'cover' ? text(locale, 'cover') : text(locale, 'page')} · {index + 1} / {pages.length}</figcaption></figure>)}
+    </div>
+  </> : <div class="comic-paper reader-unavailable" data-reader-unavailable><h2>{text(locale, 'unavailable')}</h2><p>{text(locale, 'available')}</p><ul>{languages.map(language => <li><a data-reader-language href={comicPath(language, comic, chapter)} lang={language}>{names[language]}</a></li>)}</ul></div>}
+  <nav class="reader-issues" aria-label={text(locale, 'chooseIssue')}>
+    {position > 0 && <a class="button button-outline" href={comicPath(locale, comic, chapters[position - 1])}>← {text(locale, 'previousIssue')}</a>}
+    <details><summary>{text(locale, 'chooseIssue')}</summary><ul>{chapters.map(issue => <li><a href={comicPath(locale, comic, issue)} aria-current={issue.id === chapter.id ? 'page' : undefined}>{issue.titles[locale]}</a></li>)}</ul></details>
+    {position + 1 < chapters.length && <a class="button button-outline" href={comicPath(locale, comic, chapters[position + 1])}>{text(locale, 'nextIssue')} →</a>}
+  </nav>
+</section>
+<script>
+  import { initializeComicReaders } from '../scripts/comic-reader';
+  initializeComicReaders();
+</script>

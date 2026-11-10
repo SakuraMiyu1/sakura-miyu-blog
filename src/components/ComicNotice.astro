@@ -1,0 +1,7 @@
+---
+import { comicText } from '../lib/comics-i18n';
+import type { Locale } from '../lib/i18n';
+interface Props { locale: Locale; }
+const { locale } = Astro.props;
+---
+<aside class="comic-notice"><p>{comicText(locale, 'disclaimer')}</p><p>{comicText(locale, 'rights')}</p></aside>

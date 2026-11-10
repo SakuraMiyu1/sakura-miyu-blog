@@ -1,0 +1,27 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import ComicReader from '../../../../components/ComicReader.astro';
+import ComicNotice from '../../../../components/ComicNotice.astro';
+import { locales, type Locale } from '../../../../lib/i18n';
+import { loadComics } from '../../../../lib/comics';
+import { publishedChapters, chapterAlternates, comicPath, type Comic, type ComicChapter } from '../../../../lib/comics-data';
+import { comicText as text } from '../../../../lib/comics-i18n';
+import '../../../../styles/comics.css';
+export function getStaticPaths() { return loadComics().flatMap(comic => publishedChapters(comic).flatMap(chapter => locales.map(locale => ({ params: { locale, comic: comic.slug, chapter: chapter.slug }, props: { comic, chapter } })))); }
+interface Props { comic: Comic; chapter: ComicChapter; }
+const { comic, chapter } = Astro.props;
+const locale = Astro.params.locale as Locale;
+const pages = chapter.pages[locale] || [];
+const languageLinks = Object.fromEntries(locales.map(locale => [locale, comicPath(locale, comic, chapter)]));
+const title = `${chapter.titles[locale]} · ${comic.titles[locale]}`;
+---
+<BaseLayout title={title} description={`${title}. ${comic.descriptions[locale]}`} image={comic.socialImage} imageAlt={comic.cover.alt[locale]} noindex={comic.demo || !pages.length} alternates={chapterAlternates(comic, chapter)} languageLinks={languageLinks}>
+  <main id="main" class="shell page-main comics-main">
+    <a class="comic-back" href={comicPath(locale, comic)}>← {comic.titles[locale]}</a>
+    {comic.demo && <p class="comic-demo" role="note">{text(locale, 'demo')}</p>}
+    <div class="reader-heading"><span class="eyebrow">SAKURA MIYU COMICS</span><h1>{chapter.titles[locale]}</h1><p>{comic.titles[locale]}</p></div>
+    <ComicReader comic={comic} chapter={chapter} locale={locale} />
+    <a class="comic-back" href={comicPath(locale)}>← {text(locale, 'back')}</a>
+    <ComicNotice locale={locale} />
+  </main>
+</BaseLayout>
