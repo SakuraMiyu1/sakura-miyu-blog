@@ -1,0 +1,29 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import ComicNotice from '../../../../components/ComicNotice.astro';
+import { locales, type Locale } from '../../../../lib/i18n';
+import { loadComics } from '../../../../lib/comics';
+import { publishedChapters, isPublicComic, comicPath, type Comic } from '../../../../lib/comics-data';
+import { comicText as text } from '../../../../lib/comics-i18n';
+import '../../../../styles/comics.css';
+export function getStaticPaths() { return loadComics().flatMap(comic => locales.map(locale => ({ params: { locale, comic: comic.slug }, props: { comic } }))); }
+interface Props { comic: Comic; }
+const { comic } = Astro.props;
+const locale = Astro.params.locale as Locale;
+const chapters = publishedChapters(comic);
+const first = chapters.find(chapter => chapter.pages[locale]?.length);
+---
+<BaseLayout title={comic.titles[locale]} description={comic.descriptions[locale]} image={comic.socialImage} imageAlt={comic.cover.alt[locale]} noindex={comic.demo}>
+  <main id="main" class="shell page-main comics-main">
+    <a class="comic-back" href={comicPath(locale)}>← {text(locale, 'back')}</a>
+    {comic.demo && <p class="comic-demo" role="note">{text(locale, 'demo')}</p>}
+    <div class="comic-overview"><figure><img src={comic.cover.src} alt={comic.cover.alt[locale]} width={comic.cover.width} height={comic.cover.height} fetchpriority="high" />{!isPublicComic(comic) && <figcaption>{text(locale, 'announcement')}</figcaption>}</figure>
+      <div class="comic-paper"><span class="eyebrow">SAKURA MIYU COMICS</span><h1>{comic.titles[locale]}</h1><p>{comic.descriptions[locale]}</p>
+        <dl class="comic-facts"><div><dt>{text(locale, 'status')}</dt><dd>{text(locale, comic.status)}</dd></div><div><dt>{text(locale, 'genres')}</dt><dd>{comic.genres.map(genre => genre[locale]).join(' · ')}</dd></div><div><dt>{text(locale, 'issues')}</dt><dd>{chapters.filter(chapter => chapter.pages[locale]?.length).length}</dd></div></dl>
+        {first && <a class="button button-pink" href={comicPath(locale, comic, first)}>{text(locale, 'read')} →</a>}
+        <section class="comic-chapters"><h2>{text(locale, 'chapters')}</h2>{chapters.length ? <ol>{chapters.map(chapter => <li><a href={comicPath(locale, comic, chapter)}>{chapter.titles[locale]}{!chapter.pages[locale]?.length && ` · ${text(locale, 'unavailable')}`}</a></li>)}</ol> : <><h3>{text(locale, 'waiting')}</h3><p>{text(locale, 'empty')}</p></>}</section>
+      </div>
+    </div>
+    <ComicNotice locale={locale} />
+  </main>
+</BaseLayout>

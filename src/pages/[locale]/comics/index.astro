@@ -1,0 +1,30 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ComicNotice from '../../../components/ComicNotice.astro';
+import { locales, type Locale } from '../../../lib/i18n';
+import { loadComics } from '../../../lib/comics';
+import { publishedChapters, comicPath } from '../../../lib/comics-data';
+import { comicText as text } from '../../../lib/comics-i18n';
+import '../../../styles/comics.css';
+export function getStaticPaths() { return locales.map(locale => ({ params: { locale } })); }
+const locale = Astro.params.locale as Locale;
+const comics = loadComics();
+const demo = comics.some(comic => comic.demo);
+---
+<BaseLayout title={text(locale, 'catalog')} description={text(locale, 'introduction')}>
+  <main id="main" class="shell page-main comics-main">
+    <div class="page-heading"><span class="eyebrow">SAKURA MIYU COMICS</span><h1>{text(locale, 'catalog')}</h1><p>{text(locale, 'introduction')}</p></div>
+    {demo && <p class="comic-demo" role="note">{text(locale, 'demo')}</p>}
+    <div class="comics-grid">{comics.map(comic => {
+      const chapters = publishedChapters(comic).filter(chapter => chapter.pages[locale]?.length);
+      return <article class="comic-card">
+        <a href={comicPath(locale, comic)} class="comic-card-cover" tabindex="-1" aria-hidden="true"><img src={comic.cover.src} alt="" width={comic.cover.width} height={comic.cover.height} loading="lazy" /></a>
+        <div class="comic-card-body"><span class="comic-status">{text(locale, comic.status)}</span><h2><a href={comicPath(locale, comic)}>{comic.titles[locale]}</a></h2><p>{comic.descriptions[locale]}</p>
+          <dl class="comic-facts"><div><dt>{text(locale, 'genres')}</dt><dd>{comic.genres.map(genre => genre[locale]).join(' · ')}</dd></div><div><dt>{text(locale, 'issues')}</dt><dd>{chapters.length}</dd></div></dl>
+          {chapters.length ? <a class="button button-pink" href={comicPath(locale, comic, chapters[0])}>{text(locale, 'read')}</a> : <><button class="button button-pink" disabled>{text(locale, 'read')} · {text(locale, 'coming-soon')}</button><a class="comic-more" href={comicPath(locale, comic)}>{text(locale, 'explore')} →</a></>}
+        </div>
+      </article>;
+    })}</div>
+    <ComicNotice locale={locale} />
+  </main>
+</BaseLayout>

@@ -1,0 +1,25 @@
+{
+  "id": "two-queens-of-the-fog",
+  "slug": "two-queens-of-the-fog",
+  "titles": { "uk": "Дві королеви Туману", "en": "Two Queens of the Fog", "ja": "霧の二人の女王" },
+  "descriptions": {
+    "uk": "Міна та Сейбл Ворд у Тумані. Безкоштовний неофіційний фанкомікс за Dead by Daylight. Історія та окрема передісторія готуються; затверджених випусків для читання ще немає.",
+    "en": "Mina and Sable Ward in the Fog. A free, unofficial Dead by Daylight fan comic. The story and a separate prologue are in preparation; no approved issues are available to read yet.",
+    "ja": "霧の中のミナとセーブル・ウォード。『Dead by Daylight』を題材にした無料の非公式ファンコミックです。本編と独立した前日譚を準備中で、承認済みの公開エピソードはまだありません。"
+  },
+  "cover": {
+    "src": "/images/comics/two-queens-coming-soon.webp", "width": 900, "height": 1200,
+    "alt": { "uk": "Тимчасова обкладинка-анонс: дві корони, місяць і туман; це не сторінка коміксу", "en": "Temporary announcement cover: two crowns, a moon and fog; not comic artwork", "ja": "二つの王冠、月、霧を描いた告知用の仮表紙。コミック本編の絵ではありません" }
+  },
+  "socialImage": "/images/comics/two-queens-coming-soon-social.webp",
+  "status": "coming-soon",
+  "genres": [{ "uk": "Фанкомікс", "en": "Fan comic", "ja": "ファンコミック" }, { "uk": "Горор", "en": "Horror", "ja": "ホラー" }],
+  "approved": false,
+  "publicationStatus": "draft",
+  "announcement": { "approved": true, "published": true },
+  "fanContent": "dead-by-daylight",
+  "chapters": [
+    { "id": "prologue", "slug": "prologue", "order": 0, "titles": { "uk": "Передісторія", "en": "Prologue", "ja": "前日譚" }, "approved": false, "publicationStatus": "draft", "pages": {} },
+    { "id": "issue-01", "slug": "issue-01", "order": 1, "titles": { "uk": "Випуск 1", "en": "Issue 1", "ja": "第1話" }, "approved": false, "publicationStatus": "draft", "pages": {} }
+  ]
+}

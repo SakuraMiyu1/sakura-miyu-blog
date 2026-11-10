@@ -54,6 +54,10 @@ package.json
 package-lock.json
 ```
 
+## Sakura Miyu Comics
+
+The localized Comics catalog is part of this blog at `/uk/comics/`, `/en/comics/` and `/ja/comics/`. The initial Two Queens of the Fog card is a Coming Soon announcement with zero approved published issues. Use `npm run dev:comics` for clearly marked local reader tests. See [COMICS.md](COMICS.md) for chapter data, image preparation, approval gates, language availability, reader controls and verification commands. Real issues remain drafts until the owner approves them.
+
 ## Add a new post
 
 An optional self-hosted **Decap CMS** writing desk is prepared at `/admin/`. See [CMS_SETUP.md](CMS_SETUP.md) for the one-time GitHub OAuth setup, server-side secret handling, draft/publish workflow, iPhone guide and the £0 cost report. Until it is configured, sign-in is explicitly disabled. The public blog continues to work without the CMS. All editor assets are pinned locally with MIT licenses and SHA-256 checksums; the public blog does not load them. No paid service or new npm dependency was added.
