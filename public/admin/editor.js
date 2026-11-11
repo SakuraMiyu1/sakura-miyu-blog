@@ -5,6 +5,114 @@ const languageNames = { uk: '🇺🇦 Українська (UA)', en: '🇬🇧 
 const objectWidget = CMS.getWidget('object');
 const fieldValue = (value, key) => value?.get ? value.get(key) : value?.[key];
 const hasText = value => typeof value === 'string' && value.trim().length > 0;
+const markdownWidget = CMS.getWidget('markdown');
+const storyPreview = CMS.getWidget('richtext').preview;
+let previewLocale = 'uk';
+const previewListeners = new Set();
+const selectPreviewLocale = locale => {
+  previewLocale = locale;
+  previewListeners.forEach(listener => listener(locale));
+};
+
+const SafeStoryPreview = window.createClass({
+  getInitialState() {
+    this.bindContainer = element => { this.container = element; };
+    return {};
+  },
+  componentDidMount() { this.resolveImages(); },
+  componentDidUpdate() { this.resolveImages(); },
+  resolveImages() {
+    this.container?.querySelectorAll('img[src^="/images/"]').forEach(image => {
+      const asset = String(this.props.getAsset(image.getAttribute('src')));
+      if (asset.startsWith(`blob:${window.location.origin}/`)) image.src = asset;
+    });
+  },
+  render() {
+    return h('div', { ref: this.bindContainer }, h(storyPreview, {
+      ...this.props,
+      field: this.props.field.set('sanitize_preview', true),
+      getEditorComponents: () => this.props.getEditorComponents().filter(() => false)
+    }));
+  }
+});
+
+function formatStory(value, start, end, command) {
+  const selected = value.slice(start, end);
+  const wrappers = { bold: ['**', '**'], italic: ['*', '*'], code: ['`', '`'], link: ['[', '](https://)'], 'code-block': ['```\n', '\n```'] };
+  const ticks = '`'.repeat(Math.max(command === 'code-block' ? 3 : 1, ...[...selected.matchAll(/`+/g)].map(match => match[0].length + 1)));
+  if (command === 'code-block') wrappers[command] = [ticks + '\n', '\n' + ticks];
+  if (command === 'code') {
+    const padding = selected.startsWith('`') || selected.endsWith('`') ? ' ' : '';
+    wrappers[command] = [ticks + padding, padding + ticks];
+  }
+  let text;
+  let cursor;
+  if (wrappers[command]) {
+    const [before, after] = wrappers[command];
+    text = before + selected + after;
+    cursor = start + before.length;
+  } else {
+    start = start === 0 ? 0 : value.lastIndexOf('\n', start - 1) + 1;
+    const lineEnd = value.indexOf('\n', Math.max(start, end - (value[end - 1] === '\n' ? 1 : 0)));
+    end = lineEnd < 0 ? value.length : lineEnd;
+    text = value.slice(start, end).split('\n').map((line, index) => {
+      const prefix = command.startsWith('h') ? '#'.repeat(Number(command.slice(1))) + ' ' : command === 'quote' ? '> ' : command === 'ordered-list' ? `${index + 1}. ` : '- ';
+      return prefix + (command.startsWith('h') ? line.replace(/^#{1,6}\s+/, '') : command.endsWith('list') ? line.replace(/^(?:[-+*]|\d+\.)\s+/, '') : line);
+    }).join('\n');
+    cursor = start;
+  }
+  return { value: value.slice(0, start) + text + value.slice(end), start: cursor, end: wrappers[command] ? cursor + selected.length : start + text.length };
+}
+
+const StoryControl = window.createClass({
+  getInitialState() {
+    this.bindSource = element => { this.source = element; };
+    return { mode: 'source', imagePicker: false };
+  },
+  shouldComponentUpdate() { return true; },
+
+  focus() { this.source?.focus(); },
+
+  format(command) {
+    if (!this.source || this.props.isDisabled) return;
+    const result = formatStory(this.props.value || '', this.source.selectionStart, this.source.selectionEnd, command);
+    this.props.onChange(result.value);
+    requestAnimationFrame(() => { this.focus(); this.source?.setSelectionRange(result.start, result.end); });
+  },
+
+  insertImage(path) {
+    if (!path || this.props.isDisabled) return;
+    const value = this.props.value || '';
+    const { start, end } = this.imageSelection || { start: value.length, end: value.length };
+    const alt = value.slice(start, end).replaceAll(']', '\\]') || 'Image description';
+    const url = String(path).replaceAll(' ', '%20').replaceAll('(', '%28').replaceAll(')', '%29');
+    this.props.onChange(value.slice(0, start) + `![${alt}](${url})` + value.slice(end));
+    this.setState({ imagePicker: false });
+  },
+
+  render() {
+    const { field, value = '', forID, isDisabled } = this.props;
+    const source = this.state.mode === 'source';
+    const actions = [['bold', 'Bold'], ['italic', 'Italic'], ['h1', 'H1'], ['h2', 'H2'], ['h3', 'H3'], ['h4', 'H4'], ['link', 'Link'], ['quote', 'Blockquote'], ['ordered-list', 'Ordered list'], ['unordered-list', 'Unordered list'], ['code', 'Inline code'], ['code-block', 'Code block']];
+    return h('div', { className: 'sakura-story' },
+      h('div', { className: 'sakura-story-modes', role: 'group', 'aria-label': 'Story editing mode' },
+        ...[['source', 'Source / Code'], ['preview', 'Rendered preview']].map(([mode, label]) => h('button', { key: mode, type: 'button', 'aria-pressed': this.state.mode === mode, onClick: () => this.setState({ mode, imagePicker: false }) }, label))
+      ),
+      h('div', { hidden: !source },
+        h('div', { className: 'sakura-story-toolbar', role: 'group', 'aria-label': 'Markdown formatting' },
+          ...actions.map(([command, label]) => h('button', { key: command, type: 'button', disabled: isDisabled, onMouseDown: event => event.preventDefault(), onClick: () => this.format(command) }, label)),
+          h('button', { type: 'button', disabled: isDisabled, onMouseDown: event => event.preventDefault(), onClick: () => { this.imageSelection = { start: this.source.selectionStart, end: this.source.selectionEnd }; this.setState({ imagePicker: !this.state.imagePicker }); } }, 'Image')
+        ),
+        this.state.imagePicker ? h(CMS.getWidget('image').control, { ...this.props, forID: `${forID}-inline-image`, field: field.set('widget', 'image').set('choose_url', false), value: '', onChange: path => this.insertImage(path) }) : null,
+        h('textarea', { id: forID, ref: this.bindSource, value, disabled: isDisabled, rows: 16, spellCheck: true, 'aria-label': 'Story Markdown source', onChange: event => this.props.onChange(event.target.value), onKeyDown: event => { if ((event.ctrlKey || event.metaKey) && ['b', 'i'].includes(event.key.toLowerCase())) { event.preventDefault(); this.format(event.key.toLowerCase() === 'b' ? 'bold' : 'italic'); } } }),
+        h('p', { className: 'sakura-story-help' }, 'Markdown and HTML source stays unchanged when switching views. Preview removes unsafe HTML; it is a reading view, not a visual HTML editor.')
+      ),
+      source ? null : h(SafeStoryPreview, { ...this.props, value })
+    );
+  }
+});
+
+CMS.registerWidget({ name: 'sakura-story', controlComponent: StoryControl, previewComponent: SafeStoryPreview, schema: markdownWidget.schema });
 
 class TranslationTabsControl extends objectWidget.control {
   constructor(props) {
@@ -13,7 +121,13 @@ class TranslationTabsControl extends objectWidget.control {
     this.tabButtons = {};
   }
 
+  componentDidMount() {
+    super.componentDidMount?.();
+    selectPreviewLocale(this.state.activeLocale);
+  }
+
   selectLocale(locale, focus = false) {
+    selectPreviewLocale(locale);
     this.setState({ activeLocale: locale }, () => {
       if (focus) this.tabButtons[locale]?.focus();
     });
@@ -29,7 +143,7 @@ class TranslationTabsControl extends objectWidget.control {
 
   focus(path) {
     const locale = path?.split('.')[0];
-    if (languages.includes(locale)) this.setState({ activeLocale: locale }, () => super.focus(path));
+    if (languages.includes(locale)) { selectPreviewLocale(locale); this.setState({ activeLocale: locale }, () => super.focus(path)); }
     else super.focus(path);
   }
 
@@ -72,32 +186,35 @@ class TranslationTabsControl extends objectWidget.control {
 
 CMS.registerWidget({ name: 'translation-tabs', controlComponent: TranslationTabsControl, previewComponent: objectWidget.preview, schema: objectWidget.schema, allowMapValue: true });
 CMS.registerPreviewStyle('/admin/preview.css');
-CMS.registerPreviewTemplate('blog', ({ entry, fields, fieldsMetaData, widgetFor, getAsset }) => {
-  const data = entry.get('data');
-  const image = data.get('image');
-  const translations = data.get('translations');
-  const translationFields = fields.find(field => field.get('name') === 'translations').get('fields');
-  const previews = languages.map(locale => {
+const ArticlePreview = window.createClass({
+  getInitialState() {
+    this.onLocale = locale => this.setState({ locale });
+    return { locale: previewLocale };
+  },
+  componentDidMount() { previewListeners.add(this.onLocale); this.onLocale(previewLocale); },
+  componentWillUnmount() { previewListeners.delete(this.onLocale); },
+  render() {
+    const { entry, fields, fieldsMetaData, widgetFor, getAsset } = this.props;
+    const data = entry.get('data');
+    const image = data.get('image');
+    const translations = data.get('translations');
+    const translationFields = fields.find(field => field.get('name') === 'translations').get('fields');
+    const locale = this.state.locale;
     const translation = fieldValue(translations, locale);
-    if (!translation || !['title', 'slug', 'description', 'body'].every(name => hasText(fieldValue(translation, name)))) return null;
     const localeFields = translationFields.find(field => field.get('name') === locale).get('fields');
     const metadata = fieldsMetaData?.getIn?.(['translations', locale]) || fieldsMetaData;
-    return h('section', { key: locale, lang: locale },
+    const body = fieldValue(translation, 'body');
+    return h('article', { className: 'diary-preview', lang: locale },
+      h('p', null, `Sakura Miyu · ${data.get('category') || ''} · ${data.get('translationKey') || ''}`),
       h('p', null, languageNames[locale]),
-      h('h2', null, fieldValue(translation, 'title')),
+      h('h1', null, fieldValue(translation, 'title') || 'Untitled article'),
       h('p', null, fieldValue(translation, 'description')),
       image ? h('img', { src: String(getAsset(image)), alt: fieldValue(translation, 'imageAlt') || '' }) : null,
-      widgetFor('body', localeFields, translation, metadata),
-      h('hr')
+      hasText(body) ? widgetFor('body', localeFields, data.set('body', body), metadata) : h('p', null, 'Start writing Story in this language to see its preview.')
     );
-  }).filter(Boolean);
-  return h('article', { className: 'diary-preview' },
-    h('p', null, `Sakura Miyu · ${data.get('category') || ''} · ${data.get('translationKey') || ''}`),
-    h('h1', null, 'Article preview'),
-    ...previews,
-    previews.length ? null : h('p', null, 'Complete Title, URL slug, Description and Story in any language to preview its public version. Partial translations remain saved.')
-  );
+  }
 });
+CMS.registerPreviewTemplate('blog', ArticlePreview);
 
 function validDate(value) {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z)?$/.test(value)) return false;

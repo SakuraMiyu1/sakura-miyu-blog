@@ -1,6 +1,7 @@
 import { chromium, expect } from '@playwright/test';
 import { readFile, mkdir } from 'node:fs/promises';
 import assert from 'node:assert/strict';
+import { checkStoryEditor, checkSanitizerWithoutCsp } from './cms-story-checks.mjs';
 
 const origin = process.env.TEST_URL || 'http://127.0.0.1:4321';
 const browser = await chromium.launch({ headless: true, ...(process.env.TEST_BROWSER_CHANNEL ? { channel: process.env.TEST_BROWSER_CHANNEL } : {}) });
@@ -10,6 +11,7 @@ const translations = {
   en: { title: 'A little dream', slug: 'qa-cms-dream', description: 'A small dream in my diary.', imageAlt: 'A pink sakura blossom and black ribbon', seoTitle: 'A little dream — Sakura Miyu', seoDescription: 'An English story about a little dream.', body: 'A small dream in my diary.\n\nA little magic stays with me.' },
   ja: { title: '小さな夢', slug: 'qa-cms-dream', description: '小さな夢を日記に残します。', imageAlt: '黒いリボンとピンクの桜', seoTitle: '小さな夢 — Sakura Miyu', seoDescription: '小さな夢についての日本語のお話。', body: '小さな夢を日記に残します。\n\n小さな魔法をそばに。' },
 };
+for (const [locale, translation] of Object.entries(translations)) translation.body += `\n\n<details open>\n<summary>${locale}</summary>\n<p><mark>UA EN 日本語</mark></p>\n</details>`;
 const selectLanguage = async (page, locale) => {
   await page.getByRole('tab', { name: languageNames[locale], exact: true }).click();
   return page.getByRole('tabpanel');
@@ -19,7 +21,7 @@ const fillTranslation = async (page, locale, values) => {
   for (const [field, label] of Object.entries({ title: 'Title', slug: 'URL slug', description: 'Description', imageAlt: 'Featured image alt text', seoTitle: 'SEO title', seoDescription: 'SEO description' })) {
     await panel.getByRole('textbox', { name: new RegExp('^' + label + '(?: |$)') }).fill(values[field]);
   }
-  await panel.locator('[contenteditable="true"]').first().fill(values.body);
+  await panel.getByRole('textbox', { name: 'Story Markdown source', exact: true }).fill(values.body);
 };
 const assertTranslations = actual => {
   assert.deepEqual(Object.keys(actual.translations).sort(), ['en', 'ja', 'uk']);
@@ -47,14 +49,16 @@ try {
   const errors = [];
   const backupErrors = [];
   const confirmations = [];
+  let testingUnsafeHtml = false;
   let restoreBackup = true;
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => {
+    if (testingUnsafeHtml && /Executing inline event handler violates the following Content Security Policy/.test(message.text())) return;
     if (/persistLocalDraftBackup|Failed to persist entry|violates the following Content Security Policy/.test(message.text())) backupErrors.push(message.text());
   });
   await page.addInitScript(() => {
     window.cspViolations = [];
-    document.addEventListener('securitypolicyviolation', event => window.cspViolations.push({ directive: event.effectiveDirective, blocked: event.blockedURI }));
+    document.addEventListener('securitypolicyviolation', event => window.cspViolations.push({ directive: event.effectiveDirective, blocked: event.blockedURI, securityFixture: window.testingStoryAttack === true }));
   });
   page.on('dialog', async dialog => { confirmations.push(dialog.message()); if (!restoreBackup && /backup/i.test(dialog.message())) await dialog.dismiss(); else await dialog.accept(); });
   await page.goto(origin + '/admin/');
@@ -84,6 +88,7 @@ try {
   await page.getByRole('link', { name: /Article$/ }).click();
   await page.getByRole('textbox', { name: /^Article ID/ }).fill('qa-cms-dream');
   await page.getByLabel('Publication date', { exact: true }).fill('2026-10-17');
+  await checkStoryEditor(page, languageNames, active => { testingUnsafeHtml = active; });
   for (const [locale, values] of Object.entries(translations)) await fillTranslation(page, locale, values);
   await selectLanguage(page, 'uk');
   await page.getByRole('button', { name: 'Choose an image', exact: true }).click();
@@ -118,7 +123,7 @@ try {
   for (const [locale, values] of Object.entries(translations)) {
     const panel = await selectLanguage(page, locale);
     await expect(panel.getByRole('textbox', { name: /^Title(?: |$)/ })).toHaveValue(values.title);
-    await expect(panel.locator('[contenteditable="true"]').first()).toHaveText(values.body);
+    await expect(panel.getByRole('textbox', { name: 'Story Markdown source', exact: true })).toHaveValue(values.body);
   }
   await selectLanguage(page, 'uk');
   for (const width of [375, 390, 430, 768, 1366]) {
@@ -178,8 +183,11 @@ try {
   assert.equal(await readFile('src/content/articles/welcome.json', 'utf8'), welcome, 'Local migrated source is untouched');
   assert.deepEqual(errors, []);
   assert.deepEqual(backupErrors, []);
-  assert.deepEqual(await page.evaluate(() => window.cspViolations), []);
-  console.log('CMS browser checks passed with production CSP: one article / three translation tabs, every language field, Unicode content, WebP Blob backup and restore, responsive Edit/Preview, one JSON draft and one Publish, inherited-tag semantic round-trip for migrated welcome, deletion disabled. No CSP violations or backup errors. Only an in-memory backend was used.');
+  const violations = await page.evaluate(() => window.cspViolations);
+  assert.deepEqual(violations.filter(event => !event.securityFixture), []);
+  assert.ok(violations.every(event => event.securityFixture && event.directive === 'script-src-attr' && event.blocked === 'inline'));
+  await checkSanitizerWithoutCsp(browser, origin, config);
+  console.log('CMS browser checks passed with production CSP: one article / three translation tabs, toolbar/source/preview and every language field, Unicode/HTML content, WebP Blob backup and restore, responsive Edit/Preview, one JSON draft and one Publish, inherited-tag semantic round-trip for migrated welcome, deletion disabled. No unexpected CSP violations or backup errors; synthetic inline-handler attack notices checked separately. Only an in-memory backend was used.');
 } catch (error) {
   console.error('Original CMS test failure:', error);
   const pages = browser.contexts().flatMap(context => context.pages());

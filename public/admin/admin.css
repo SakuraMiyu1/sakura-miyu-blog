@@ -45,3 +45,10 @@ body { margin: 0; background: #fff0f5; color: #21131f; }
 .sakura-translations, .sakura-translation-panel { min-width: 0; max-width: 100%; }
 .sakura-translation-panel[hidden] { display: none !important; }
 .sakura-translation-panel:focus-visible { outline-offset: 2px; }
+.sakura-story-modes, .sakura-story-toolbar { display: flex; flex-wrap: wrap; gap: 6px; margin-block: 8px; }
+.sakura-story button { min-height: 36px; padding: 7px 10px; border: 1px solid #e8a0bf; border-radius: 4px; background: #fff0f5; color: #7b254b; cursor: pointer; }
+.sakura-story button[aria-pressed="true"] { color: #fff0f5; background: #17121c; }
+.sakura-story button:disabled { opacity: .5; cursor: default; }
+.sakura-story textarea { width: 100%; box-sizing: border-box; min-height: 320px; resize: vertical; padding: 12px; border: 1px solid #e8a0bf; border-radius: 4px; color: #21131f; background: #fff; font: 15px/1.65 ui-monospace, monospace; tab-size: 2; }
+.sakura-story-help { color: #5a4254; font-size: 13px; line-height: 1.6; }
+.sakura-story img { max-width: 100%; height: auto; }

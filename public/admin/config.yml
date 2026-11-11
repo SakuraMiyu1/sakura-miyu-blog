@@ -210,17 +210,15 @@
                 {
                   "label": "Story",
                   "name": "body",
-                  "widget": "markdown",
-                  "modes": [
-                    "raw"
-                  ],
+                  "widget": "sakura-story",
                   "editor_components": [
                     "image",
                     "code-block"
                   ],
                   "default": "",
-                  "hint": "Write this language version in Markdown. It becomes public only when Title, URL slug, Description and Story are all filled.",
-                  "required": false
+                  "hint": "Use the Markdown toolbar or edit Source / Code directly. Rendered preview preserves the stored source. Complete Title, URL slug, Description and Story to publish this language.",
+                  "required": false,
+                  "sanitize_preview": true
                 },
                 {
                   "label": "Language-specific tags",
@@ -302,17 +300,15 @@
                 {
                   "label": "Story",
                   "name": "body",
-                  "widget": "markdown",
-                  "modes": [
-                    "raw"
-                  ],
+                  "widget": "sakura-story",
                   "editor_components": [
                     "image",
                     "code-block"
                   ],
                   "default": "",
-                  "hint": "Write this language version in Markdown. It becomes public only when Title, URL slug, Description and Story are all filled.",
-                  "required": false
+                  "hint": "Use the Markdown toolbar or edit Source / Code directly. Rendered preview preserves the stored source. Complete Title, URL slug, Description and Story to publish this language.",
+                  "required": false,
+                  "sanitize_preview": true
                 },
                 {
                   "label": "Language-specific tags",
@@ -394,17 +390,15 @@
                 {
                   "label": "Story",
                   "name": "body",
-                  "widget": "markdown",
-                  "modes": [
-                    "raw"
-                  ],
+                  "widget": "sakura-story",
                   "editor_components": [
                     "image",
                     "code-block"
                   ],
                   "default": "",
-                  "hint": "Write this language version in Markdown. It becomes public only when Title, URL slug, Description and Story are all filled.",
-                  "required": false
+                  "hint": "Use the Markdown toolbar or edit Source / Code directly. Rendered preview preserves the stored source. Complete Title, URL slug, Description and Story to publish this language.",
+                  "required": false,
+                  "sanitize_preview": true
                 },
                 {
                   "label": "Language-specific tags",
