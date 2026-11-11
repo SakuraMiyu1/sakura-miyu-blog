@@ -16,9 +16,13 @@ async function openWritingDesk() {
       status.textContent = 'Sign-in is not configured yet. Complete the one-time GitHub OAuth setup in the guide. No editing or publishing is enabled.';
       return;
     }
-    const configResponse = await fetch('/admin/config.yml', { cache: 'no-store' });
-    if (!configResponse.ok) throw new Error('Configuration unavailable');
-    const config = await configResponse.json();
+    const [configResponse, comicsResponse] = await Promise.all([
+      fetch('/admin/config.yml', { cache: 'no-store' }),
+      fetch('/admin/comics-collection.json', { cache: 'no-store' })
+    ]);
+    if (!configResponse.ok || !comicsResponse.ok) throw new Error('Configuration unavailable');
+    const [config, comics] = await Promise.all([configResponse.json(), comicsResponse.json()]);
+    config.collections = [...config.collections, comics];
     const script = document.createElement('script');
     script.src = '/admin/vendor/decap-cms.js';
     script.onload = () => {
